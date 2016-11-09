@@ -1,5 +1,6 @@
 from socket import AF_INET, SOCK_STREAM, socket, SHUT_WR
 from socket import error as soc_err
+from base64 import decodestring, encodestring
 
 import logging
 
@@ -9,6 +10,17 @@ LOG = logging.getLogger()
 from threading import Thread, Lock
 MSG_SEP = ';'
 DEFAULT_RCV_BUFSIZE = 1024
+
+
+MSG_SEP = ";"
+REQ_SEND_LETTER = "l"
+MSG_FIELD_SEP = ":"
+
+def serialize(msg):
+    return encodestring(msg)
+
+def deserialize(msg):
+    return decodestring(msg)
 
 class ClientHandler(Thread):
     def __init__(self, client_socket, client_addr, file):
@@ -59,6 +71,10 @@ class ClientHandler(Thread):
         return message
 
     def protocol(self, message):
+        if message.startswith(REQ_SEND_LETTER + MSG_FIELD_SEP):
+            blocks = message.split(MSG_FIELD_SEP)
+            data = decodestring(blocks[1])
+            self.file.addLetter(data)
         #Kirjuta protocol
         return 4
 

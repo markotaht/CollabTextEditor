@@ -11,3 +11,6 @@ class TextFile(Thread):
             if self.queue.empty():
                 continue
             #Handli evente
+
+    def addLetter(self,data):
+        return
