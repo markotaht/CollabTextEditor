@@ -25,8 +25,12 @@ class ClienUI(Frame):
         textField = Text(top)
         textField.grid(row=1, column=0, padx=padx, pady=pady)
 
-        connectedcollabsLabel = Label(top, text="Currently connected collabs")
-        connectedcollabsLabel.grid(row=1, column=4, padx=padx, pady=pady)
+        connectedcollabsFrame = LabelFrame(top, text="Currently connected collabs")
+        connectedcollabsFrame.grid(row=1, column=1, padx=padx, pady=padx)
+
+        listbox = Listbox(connectedcollabsFrame)
+        listbox.grid(row=0, column=0, padx=padx, pady=pady)
+        listbox.insert(END, "Antonio")
 
 
     def connectdialog(self):
@@ -55,28 +59,32 @@ class ClienUI(Frame):
         ipEntry = Entry(top)
         ipEntry.grid(row=2, column=1, padx=padx, pady=pady)
 
-        def callback():
+        def callback(window):
             #TODO check and connect
             print usernameEntry.get()
             print passwordEntry.get()
             print ipEntry.get()
+            #TODO close only when connection successful, else error message
+            window.destroy()
             self.outsidefile()
 
-        connectButton = Button(top, text = "Connect", command=callback)
+        connectButton = Button(top, text = "Connect", command=lambda: callback(top))
         connectButton.pack(side="bottom", padx=padx, pady=pady)
         connectButton.grid(row=3, column=1)
 
     #updates the collaborator list
-    def updatelist(self, un, pw, addnew):
+    def updatelist(self, un, pw, addnew, window):
 
         if addnew:
             print "added", un, pw
             listbox.insert(END, un + "    " + pw)
+            window.destroy()
 
         else:
             print "edited", listbox.get(ANCHOR) + "to", un, pw
             listbox.delete(ANCHOR)
             listbox.insert(END, un+"    "+pw)
+            window.destroy()
 
     def editdialog(self, isAddingnew):
         padx = 2
@@ -98,11 +106,13 @@ class ClienUI(Frame):
         passwordEntry = Entry(top)
         passwordEntry.grid(row=1, column=1, padx=padx, pady=pady)
 
-        doneButton = Button(top, text="cancel")
-        doneButton.grid(row=2, column=0, padx=padx, pady=pady)
+        cancelButton = Button(top, text="cancel", command = top.destroy)
+        cancelButton.grid(row=2, column=0, padx=padx, pady=pady)
 
-        cancelButton = Button(top, text="done", command = lambda: self.updatelist(usernameEntry.get(), passwordEntry.get(), isAddingnew))
-        cancelButton.grid(row=2, column=1, padx=padx, pady=pady)
+        doneButton = Button(top, text="done", command = lambda: self.updatelist(usernameEntry.get(), passwordEntry.get(), isAddingnew, top))
+        doneButton.grid(row=2, column=1, padx=padx, pady=pady)
+
+
 
         # TODO crashes when list is empty
         #workaround - check if there is something selected
@@ -127,21 +137,25 @@ class ClienUI(Frame):
         top = Toplevel()
         top.title("Manage collaborators")
 
-        listboxLabel = Label(top, text="username    password")
-        listboxLabel.grid(row=1, column=0, padx=padx, pady=pady)
-
         global listbox
-        listbox = Listbox(top)
+
+        buttons = LabelFrame(top)
+        buttons.grid(row=0, column=0,padx=10, pady=10)
+
+        list = LabelFrame(top, text = "Username password",padx=padx, pady=pady)
+        list.grid(row=1, column=0, padx=padx, pady=pady)
+
+        listbox = Listbox(list)
         listbox.grid(row=2, column=0, padx=padx, pady=pady)
         listbox.insert(END, "Antonio    password")
 
-        addButton = Button(top, text="add", command = lambda: self.editdialog(True))
+        addButton = Button(buttons, text="add", command = lambda: self.editdialog(True))
         addButton.grid(row=0, column=0, padx=padx, pady=pady)
 
-        editButton = Button(top, text="edit", command = lambda: self.editdialog(False))
+        editButton = Button(buttons, text="edit", command = lambda: self.editdialog(False))
         editButton.grid(row=0, column=1, padx=padx, pady=pady)
 
-        removeButton = Button(top, text="remove", command= self.deletecollaborator)
+        removeButton = Button(buttons, text="remove", command= self.deletecollaborator)
         removeButton.grid(row=0, column=2, padx=padx, pady=pady)
 
 
@@ -158,20 +172,28 @@ class ClienUI(Frame):
         top = Toplevel()
         top.title("File name here")
 
-        closeallButton = Button(top, text="Close all")
+        buttons = LabelFrame(top)
+        buttons.grid(row=0, column=0, padx=padx, pady=pady)
+
+
+        closeallButton = Button(buttons, text="Close all")
         closeallButton.grid(row=0, column=0, padx=padx, pady=pady)
 
-        closeclientButton = Button(top, text="Close client")
+        closeclientButton = Button(buttons, text="Close client")
         closeclientButton.grid(row=0, column=1, padx=padx, pady=pady)
 
-        managecollaboratorsButton = Button(top, text="Manage collaborators", command = self.managecollaborators)
+        managecollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.managecollaborators)
         managecollaboratorsButton.grid(row=0, column=2, padx=padx, pady=pady)
 
         textField = Text(top)
-        textField.grid(row=1, column=0, padx = padx, pady = pady)
+        textField.grid(row=1, column=0, padx=padx, pady=pady)
 
-        connectedcollabsLabel = Label(top, text = "Currently connected collabs")
-        connectedcollabsLabel.grid(row=1, column=4, padx=padx, pady=pady)
+        buttons = LabelFrame(top, text="Currently connected collabs")
+        buttons.grid(row=1, column=2, padx=padx, pady=padx)
+
+        listbox = Listbox(buttons)
+        listbox.grid(row=0, column=0, padx=padx, pady=pady)
+        listbox.insert(END, "Antonio")
 
     def initUI(self):
 
