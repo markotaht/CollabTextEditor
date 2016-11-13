@@ -1,26 +1,15 @@
 from socket import AF_INET, SOCK_STREAM, socket, SHUT_WR
 from socket import error as soc_err
-from base64 import decodestring, encodestring
 
+from Commons import *
 import logging
 
 logging.basicConfig(level=logging.DEBUG, \
                     format='%(asctime)s (%(threadName)-2s) %(message)s', )
 LOG = logging.getLogger()
 from threading import Thread, Lock
-MSG_SEP = ';'
 DEFAULT_RCV_BUFSIZE = 1024
 
-
-MSG_SEP = ";"
-REQ_SEND_LETTER = "l"
-MSG_FIELD_SEP = ":"
-
-def serialize(msg):
-    return encodestring(msg)
-
-def deserialize(msg):
-    return decodestring(msg)
 
 class ClientHandler(Thread):
     def __init__(self, client_socket, client_addr, file):
@@ -38,6 +27,7 @@ class ClientHandler(Thread):
             rsp = self.protocol(m)
             if not self.send(rsp):
                 break
+            #sendUpdates
 
     def handle(self):
         self.start()
@@ -71,12 +61,27 @@ class ClientHandler(Thread):
         return message
 
     def protocol(self, message):
-        if message.startswith(REQ_SEND_LETTER + MSG_FIELD_SEP):
-            blocks = message.split(MSG_FIELD_SEP)
-            data = decodestring(blocks[1])
+        action,data = self.handlePackage(message)
+        if action == REQ_SEND_LETTER:
             self.file.addLetter(data)
-        #Kirjuta protocol
-        return 4
+            return RSP_SEND_LETTER_OK
+        elif action == REQ_ADD_NEW_LINE:
+            self.file.addLine(data)
+            return RSP_ADD_NEW_LINE_OK
+        elif action == REQ_REMOVE_LINE:
+            self.file.removeLine(data)
+            return RSP_REMOVE_LINE_OK
+        elif action == REQ_MOVE_CARET:
+            self.file.moveCaret(data)
+            return RSP_MOVE_CARET_OK
+        else:
+            #Migi viga
+            return 0
+
+    def handlePackage(self,package):
+        blocks = package.split(MSG_FIELD_SEP)
+        data = decodestring(blocks[1])
+        return blocks[1],data
 
     def send(self,response):
         m = response + MSG_SEP

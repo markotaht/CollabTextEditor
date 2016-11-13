@@ -1,23 +1,13 @@
 from socket import AF_INET, SOCK_STREAM, socket, SHUT_RD
 from socket import error as soc_err
-from threading import Lock
-from base64 import decodestring, encodestring
+from threading import Thread, Lock
 
 import ClientUI
+from Commons import *
+
 import logging
 FORMAT='%(asctime)s (%(threadName)-2s) %(message)s'
 logging.basicConfig(level=logging.INFO,format=FORMAT)
-
-MSG_SEP = ";"
-REQ_SEND_LETTER = "l"
-RSP_SEND_LETTER_OK = "1"
-MSG_FIELD_SEP = ":"
-
-def serialize(msg):
-    return encodestring(msg)
-
-def deserialize(msg):
-    return decodestring(msg)
 
 class Client():
 
@@ -25,6 +15,7 @@ class Client():
         self.lock = Lock()
         self.file = ""
         self.createUI()
+        self.loop()
 
     def connect(self,srv_addr):
         self.socket = socket(AF_INET, SOCK_STREAM)
@@ -39,7 +30,23 @@ class Client():
 
     def sendLetter(self,letter):
         data = serialize(letter)
+        #Lisda positsioon
         req = REQ_SEND_LETTER + MSG_FIELD_SEP + data
+        return self.send(req)
+
+    def addNewLine(self,lineId):
+        data = serialize(lineId)
+        req = REQ_ADD_NEW_LINE + MSG_FIELD_SEP + data
+        return self.send(req)
+
+    def addRemoveLine(self, lineId):
+        data = serialize(lineId)
+        req = REQ_REMOVE_LINE + MSG_FIELD_SEP + data
+        return self.send(req)
+
+    def addMoveCaret(self, lineId,index,subsStart,subsEnd):
+        data = serialize([lineId,index,subsStart,subsEnd])
+        req = REQ_MOVE_CARET + MSG_FIELD_SEP + data
         return self.send(req)
 
     def send(self,msg):
@@ -68,14 +75,28 @@ class Client():
             return
         if msg.startswith(RSP_SEND_LETTER_OK + MSG_FIELD_SEP):
             self.on_LetterSent()
-
+        elif msg.startswith(RSP_ADD_NEW_LINE_OK + MSG_FIELD_SEP):
+            self.on_NewLineAdded()
+        elif msg.startswith(RSP_REMOVE_LINE_OK + MSG_FIELD_SEP):
+            self.on_Lineemoved()
+        elif msg.startswith(RSP_MOVE_CARET_OK + MSG_FIELD_SEP):
+            self.on_CaretMoved()
         else:
             #UNKONW CONTROL CODE
             return 0
 
-    def on_LetterSent(self):
-        #Do something
-        return
+
+    def set_onLetterSentCallback(self, func):
+        self.on_LetterSent = func
+
+    def set_onNewLineAddedCallback(self,func):
+        self.on_NewLineAdded = func
+
+    def set_onLineeMovedCallback(self,func):
+        self.on_Lineemoved = func
+
+    def set_onCaretMovedCallback(self,func):
+        self.on_CaretMoved = func
 
     def close(self):
         self.socket.shutdown(SHUT_RD)
@@ -84,6 +105,16 @@ class Client():
     def createUI(self):
         self.ui = ClientUI.ClienUI(self)
         self.ui.run();
+
+    def loop(self):
+        func = Thread(target=self._loop).start()
+        func.join()
+
+    def _loop(self):
+        logging.info("Receiver loop...")
+        while 1:
+            if self.receive() == 0:
+                break;
 
 if __name__ == '__main__':
     c = Client()

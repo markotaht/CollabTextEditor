@@ -14,3 +14,12 @@ class TextFile(Thread):
 
     def addLetter(self,data):
         return
+
+    def addLine(self, data):
+        return
+
+    def removeLine(self,data):
+        return
+
+    def moveCaret(self,data):
+        return

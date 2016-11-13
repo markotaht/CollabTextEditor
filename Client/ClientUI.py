@@ -10,7 +10,6 @@ class ClienUI(Frame):
 
     def run(self):
         self.content.mainloop()
-        print "YAY"
 
     def outsidefile(self):
         padx = 2
