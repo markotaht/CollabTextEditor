@@ -14,10 +14,11 @@ class Client():
     def __init__(self):
         self.lock = Lock()
         self.file = ""
-    #    self.createUI()
+        self.socket = None
+        self.createUI()
 
-        self.connect(('127.0.0.1',7777))
-        print self.sendLetter("a",0,"1")
+    #    self.connect(('127.0.0.1',7777))
+    #    print self.sendLetter("a",0,"1")
     #    self.loop()
 
     def connect(self,srv_addr):
@@ -145,8 +146,9 @@ class Client():
         self.on_CaretMoved = func
 
     def close(self):
-        self.socket.shutdown(SHUT_RD)
-        self.socket.close()
+        if not self.socket == None:
+            self.socket.shutdown(SHUT_RD)
+            self.socket.close()
 
     def createUI(self):
         self.ui = ClientUI.ClienUI(self)

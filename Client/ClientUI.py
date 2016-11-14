@@ -157,9 +157,14 @@ class ClienUI(Frame):
         removeButton = Button(buttons, text="remove", command= self.deletecollaborator)
         removeButton.grid(row=0, column=2, padx=padx, pady=pady)
 
+    def closeClient(self):
+        self.client.close()
+        #TODO close ui
 
-
-
+    def keyevent(self, event):
+        for char in event.char:
+            print("Key pressed %d" %ord(event.char))
+        return
 
     def fileedit(self):
 
@@ -178,7 +183,7 @@ class ClienUI(Frame):
         closeallButton = Button(buttons, text="Close all")
         closeallButton.grid(row=0, column=0, padx=padx, pady=pady)
 
-        closeclientButton = Button(buttons, text="Close client")
+        closeclientButton = Button(buttons, text="Close client", command = self.closeClient())
         closeclientButton.grid(row=0, column=1, padx=padx, pady=pady)
 
         managecollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.managecollaborators)
@@ -186,6 +191,7 @@ class ClienUI(Frame):
 
         textField = Text(top)
         textField.grid(row=1, column=0, padx=padx, pady=pady)
+        textField.bind('<Key>', self.keyevent)
 
         buttons = LabelFrame(top, text="Currently connected collabs")
         buttons.grid(row=1, column=2, padx=padx, pady=padx)
@@ -195,7 +201,6 @@ class ClienUI(Frame):
         listbox.insert(END, "Antonio")
 
     def initUI(self):
-
 
         padx = 2
         pady = 2
