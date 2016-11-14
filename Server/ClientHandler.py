@@ -8,7 +8,6 @@ logging.basicConfig(level=logging.DEBUG, \
                     format='%(asctime)s (%(threadName)-2s) %(message)s', )
 LOG = logging.getLogger()
 from threading import Thread, Lock
-DEFAULT_RCV_BUFSIZE = 1024
 
 
 class ClientHandler(Thread):
@@ -62,7 +61,13 @@ class ClientHandler(Thread):
 
     def protocol(self, message):
         action,data = self.handlePackage(message)
-        if action == REQ_SEND_LETTER:
+        if action == REQ_MODIFICATION:
+            id = self.file.requestModification(data)
+            return RSP_MODIFICATION_OK + MSG_FIELD_SEP + id
+        elif action == REQ_REMOVE_LETTER:
+            self.file.removeLetter(data)
+            return RSP_REMOVE_LETTER_OK
+        elif action == REQ_SEND_LETTER:
             self.file.addLetter(data)
             return RSP_SEND_LETTER_OK
         elif action == REQ_ADD_NEW_LINE:
@@ -81,17 +86,17 @@ class ClientHandler(Thread):
     def handlePackage(self,package):
         blocks = package.split(MSG_FIELD_SEP)
         data = decodestring(blocks[1])
-        return blocks[1],data
+        return blocks[0],data
 
     def send(self,response):
         m = response + MSG_SEP
         with self.lock:
             r = False
             try:
-                self.client_s.sendall(m)
+                self.client_socket.sendall(m)
                 r = True
             except KeyboardInterrupt:
-                self.client_s.close()
+                self.client_socket.close()
                 LOG.info('Ctrl+C issued, disconnecting client %s:%d' \
                          '' % self.client_addr)
             except soc_err as e:
@@ -100,7 +105,7 @@ class ClientHandler(Thread):
                              '' % self.client_addr)
                 else:
                     LOG.error('Error: %s' % str(e))
-                self.client_s.close()
+                self.client_socket.close()
                 LOG.info('Client %s:%d disconnected' % self.client_addr)
             return r
 

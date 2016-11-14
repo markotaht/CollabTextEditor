@@ -8,6 +8,7 @@ class Server():
 
     def __init__(self):
         self.file = TextFile.TextFile()
+        self.file.start()
 
     def listen(self,sock_addr,backlog=1):
         self.sock_addr = sock_addr
@@ -27,7 +28,7 @@ class Server():
                 client_socket = None
                 logging.info('Awaiting new clients ...')
                 client_socket, client_addr = self.socket.accept()
-                c = ClientHandler(client_socket, client_addr,self.file)
+                c = ClientHandler.ClientHandler(client_socket, client_addr,self.file)
                 handlers.append(c)
                 c.handle()
         except KeyboardInterrupt:
@@ -37,6 +38,7 @@ class Server():
                 client_socket.close()
             self.socket.close()
         map(lambda x: x.join(), handlers)
+        self.file.join()
 
 if __name__ == '__main__':
     logging.info( 'Application started' )

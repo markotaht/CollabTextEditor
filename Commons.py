@@ -11,7 +11,15 @@ RSP_REMOVE_LINE_OK = "3"
 REQ_MOVE_CARET = "a"
 RSP_MOVE_CARET_OK = "4"
 
+REQ_MODIFICATION = "b"
+RSP_MODIFICATION_OK = "5"
+
+REQ_REMOVE_LETTER = "c"
+RSP_REMOVE_LETTER_OK = "6"
+
 MSG_FIELD_SEP = ":"
+
+DEFAULT_RCV_BUFSIZE = 1024
 
 from base64 import decodestring, encodestring
 def serialize(msg):
