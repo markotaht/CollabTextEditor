@@ -76,6 +76,11 @@ class ClientHandler(Thread):
         elif action == REQ_REMOVE_LINE:
             self.file.removeLine(data)
             return RSP_REMOVE_LINE_OK
+        elif action == REQ_SYNCHRONIZE:
+            changes = self.file.getChanges()
+            data = ":".join(map(lambda x: serialize(x[0] + ":-:" + x[1]), changes))
+            data = serialize(data)
+            return RSP_SYNCHRONIZE_OK + MSG_FIELD_SEP + data
         else:
             #Migi viga
             return 0

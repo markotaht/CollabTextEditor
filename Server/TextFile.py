@@ -118,6 +118,9 @@ class TextFile(Thread):
 
             return ID
 
+    def getChanges(self):
+        return self.content
+
     def findLine(self,id):
         for i in self.content:
             if i[0] == id:

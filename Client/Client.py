@@ -88,6 +88,11 @@ class Client():
     def _synchronise(self,args):
 
         #Syncimne
+        req = REQ_SYNCHRONIZE + MSG_FIELD_SEP
+        data = self.send(req)
+        #Decode data coming from server
+        # map(lambda x: deserialize(x).split(":-:"), deserialize(data[2:]).split(":"))
+        #TODO Put data somewhere
         self.queue.put((self._synchronise, []))
 
     def send(self,msg):
@@ -97,7 +102,6 @@ class Client():
             try:
                 self.socket.sendall(m)
                 r = self._receive()
-                logging.info(r)
             except KeyboardInterrupt:
                 self.socket.close()
                 logging.info('Ctrl + C issued, terminating...')
