@@ -8,10 +8,13 @@ logging.basicConfig(level=logging.DEBUG, \
                     format='%(asctime)s (%(threadName)-2s) %(message)s', )
 LOG = logging.getLogger()
 
+#TODO ID genereerimine linede jaoks.
+#TODO Eventi endresult mergimine jargmise event alg olekuga
+#TODO voimalik et vaja parandada threadide syncimist
 class TextFile(Thread):
     def __init__(self):
         Thread.__init__(self)
-        self.content = [("1","")]
+        self.content = [("1","\n")]
         self.queue = defaultdict(lambda:defaultdict(lambda:defaultdict(str)))
         self.lock = Lock()
 
@@ -26,7 +29,6 @@ class TextFile(Thread):
                     self.queue.pop(i,None)
 
 
-
     def applyEvent(self,event,id):
         if self.queue[event][id]["modification"] == "ADD_LETTER":
             line = self.findLine(event)
@@ -37,9 +39,17 @@ class TextFile(Thread):
         elif self.queue[event][id]["modification"] == "REMOVE_LETTER":
             line = self.findLine(event)
             index = self.content.index(line)
-            carIndex = self.queue[event][id]["index"]
-            data = line[1][:carIndex-1]+ line[1][carIndex:]
+            carIndex = int(self.queue[event][id]["index"])
+            data = line[1][:carIndex]+ line[1][carIndex+1:]
             self.content[index] = (event,data)
+        elif self.queue[event][id]["modification"] == "ADD_LINE":
+            line = self.findLine(event)
+            index = self.content.index(line)
+            self.content.insert(index+1,("2","\n"))
+        elif self.queue[event][id]["modification"] == "REMOVE_LINE":
+            line = self.findLine(event)
+            index = self.content.index(line)
+            del self.content[index]
         return
 
     def checkEvents(self,event):
@@ -51,6 +61,8 @@ class TextFile(Thread):
                 self.queue[event].pop(i,None)
                 #MErge vms siin
             else:
+                if time() - int(i) >= 1000:
+                    self.queue[event].pop(i,None)
                 return
 
 
@@ -79,10 +91,22 @@ class TextFile(Thread):
             return
 
     def addLine(self, data):
-        return
+        with self.lock:
+            parts = data.split(":")
+            lineId = parts[0]
+            reqtime = parts[1]
+            self.queue[lineId][reqtime]["modification"] = "ADD_LINE"
+            self.queue[lineId][reqtime]["Done"] = True
+            return
 
     def removeLine(self,data):
-        return
+        with self.lock:
+            parts = data.split(":")
+            lineId = parts[0]
+            reqtime = parts[1]
+            self.queue[lineId][reqtime]["modification"] = "REMOVE_LINE"
+            self.queue[lineId][reqtime]["Done"] = True
+            return
 
     def requestModification(self,data):
         with self.lock:

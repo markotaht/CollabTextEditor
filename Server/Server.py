@@ -28,6 +28,7 @@ class Server():
                 client_socket = None
                 logging.info('Awaiting new clients ...')
                 client_socket, client_addr = self.socket.accept()
+                logging.info("Client joined from %s:%s"%client_addr)
                 c = ClientHandler.ClientHandler(client_socket, client_addr,self.file)
                 handlers.append(c)
                 c.handle()

@@ -1,7 +1,7 @@
 from socket import AF_INET, SOCK_STREAM, socket, SHUT_RD
 from socket import error as soc_err
 from threading import Thread, Lock
-
+from Queue import Queue
 import ClientUI
 from Commons import *
 
@@ -15,11 +15,16 @@ class Client():
         self.lock = Lock()
         self.file = ""
         self.socket = None
+        self.queue = Queue()
+        self.queue.put((self._synchronise,[]))
         self.createUI()
-
-    #    self.connect(('127.0.0.1',7777))
-    #    print self.sendLetter("a",0,"1")
     #    self.loop()
+        #TESTIB Tahe saatmist ja eemaldamist.
+        self.connect(('127.0.0.1',7777))
+        self.sendLetter("a",0,"1")
+    #    print self.removeLetter(0,"1")
+    #    print self.addNewLine("1")
+    #    print self.removeLine("2")
 
     def connect(self,srv_addr):
         self.socket = socket(AF_INET, SOCK_STREAM)
@@ -38,34 +43,52 @@ class Client():
         rsp = self.send(req)
         return rsp[rsp.find(":")+1:]
 
-    def sendLetter(self,letter, index, lineId):
-        ID = self.requestModification(lineId)
-        data = ID + ":" + str(index) + ":" +letter
-        logging.info(ID)
+    def sendLetter(self, letter, index, lineId):
+        args = [letter,index,lineId]
+        self.queue.put((self._sendLetter, args))
+
+    def _sendLetter(self,args):
+        ID = self.requestModification(args[2])
+        logging.info("Change letter changeID: " + ID)
+        data = ID + ":" + str(args[1]) + ":" +args[0]
         data = serialize(data)
         req = REQ_SEND_LETTER + MSG_FIELD_SEP + data
         return self.send(req)
 
-    def removeLetter(self,index, lineid):
-        ID = self.requestModification(lineid)
-        data = serialize(ID + ":" + str(index))
+    def removeLetter(self, index, lineId):
+        args = [index, lineId]
+        self.queue.put((self._removeLetter, args))
+
+    def _removeLetter(self,args):
+        ID = self.requestModification(args[1])
+        data = serialize(ID + ":" + str(args[0]))
         req = REQ_REMOVE_LETTER + MSG_FIELD_SEP + data
         return self.send(req)
 
-    def addNewLine(self,lineId):
-        data = serialize(lineId)
+    def addNewLine(self, lineId):
+        args = [lineId]
+        self.queue.put((self._addNewLine, args))
+
+    def _addNewLine(self,args):
+        ID = self.requestModification(args[0])
+        data = serialize(ID)
         req = REQ_ADD_NEW_LINE + MSG_FIELD_SEP + data
         return self.send(req)
 
-    def addRemoveLine(self, lineId):
-        data = serialize(lineId)
+    def removeLine(self, lineId):
+        args = [lineId]
+        self.queue.put((self._removeLine, args))
+
+    def _removeLine(self, args):
+        ID = self.requestModification(args[0])
+        data = serialize(ID)
         req = REQ_REMOVE_LINE + MSG_FIELD_SEP + data
         return self.send(req)
 
-    def addMoveCaret(self, lineId,index,subsStart,subsEnd):
-        data = serialize([lineId,index,subsStart,subsEnd])
-        req = REQ_MOVE_CARET + MSG_FIELD_SEP + data
-        return self.send(req)
+    def _synchronise(self,args):
+
+        #Syncimne
+        self.queue.put((self._synchronise, []))
 
     def send(self,msg):
         m = msg + MSG_SEP
@@ -74,6 +97,7 @@ class Client():
             try:
                 self.socket.sendall(m)
                 r = self._receive()
+                logging.info(r)
             except KeyboardInterrupt:
                 self.socket.close()
                 logging.info('Ctrl + C issued, terminating...')
@@ -114,57 +138,36 @@ class Client():
             return 0
         return message
 
-
-    def receive(self,msg):
-        logging.info("Received %d bytes in total"%len(msg))
-        if len(msg) < 2:
-            logging.debug("Not enough data")
-            return
-        if msg.startswith(RSP_SEND_LETTER_OK + MSG_FIELD_SEP):
-            self.on_LetterSent()
-        elif msg.startswith(RSP_ADD_NEW_LINE_OK + MSG_FIELD_SEP):
-            self.on_NewLineAdded()
-        elif msg.startswith(RSP_REMOVE_LINE_OK + MSG_FIELD_SEP):
-            self.on_Lineemoved()
-        elif msg.startswith(RSP_MOVE_CARET_OK + MSG_FIELD_SEP):
-            self.on_CaretMoved()
-        else:
-            #UNKONW CONTROL CODE
-            return 0
-
-
-    def set_onLetterSentCallback(self, func):
-        self.on_LetterSent = func
-
-    def set_onNewLineAddedCallback(self,func):
-        self.on_NewLineAdded = func
-
-    def set_onLineeMovedCallback(self,func):
-        self.on_Lineemoved = func
-
-    def set_onCaretMovedCallback(self,func):
-        self.on_CaretMoved = func
-
     def close(self):
         if not self.socket == None:
             self.socket.shutdown(SHUT_RD)
             self.socket.close()
+            self.socket = None
+        self.queue.put(None)
 
     def createUI(self):
         self.ui = ClientUI.ClienUI(self)
-        self.ui.run();
+        self.ui.start();
 
- #   def loop(self):
- #       func = Thread(target=self._loop).start()
- #       func.join()
+    def loop(self):
+        func = Thread(target=self._loop, args=(self,))
+        func.start()
+        return func
 
- #   def _loop(self):
- #       logging.info("Receiver loop...")
- #       while 1:
- #           msg = self._receive()
- #           if msg == 0:
- #               break;
- #           self.receive(msg)
+    def _loop(self, parent):
+        logging.info("Receiver loop...")
+        while not parent.queue.empty():
+            event = parent.queue.get()
+            try:
+                if event == None:
+                    break
+                event[0](event[1])
+            except soc_err:
+                break
 
 if __name__ == '__main__':
     c = Client()
+
+    t = c.loop()
+
+    t.join()

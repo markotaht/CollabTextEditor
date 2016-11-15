@@ -1,9 +1,10 @@
 from Tkinter import *
+from threading import Thread
 
 
-
-class ClienUI(Frame):
+class ClienUI(Frame,Thread):
     def __init__(self, client):
+        Thread.__init__(self)
         self.client = client
         self.content = Tk()
         self.initUI()

@@ -76,9 +76,6 @@ class ClientHandler(Thread):
         elif action == REQ_REMOVE_LINE:
             self.file.removeLine(data)
             return RSP_REMOVE_LINE_OK
-        elif action == REQ_MOVE_CARET:
-            self.file.moveCaret(data)
-            return RSP_MOVE_CARET_OK
         else:
             #Migi viga
             return 0
