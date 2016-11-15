@@ -8,123 +8,77 @@ logging.basicConfig(level=logging.DEBUG, \
                     format='%(asctime)s (%(threadName)-2s) %(message)s', )
 LOG = logging.getLogger()
 
-#TODO ID genereerimine linede jaoks.
-#TODO Eventi endresult mergimine jargmise event alg olekuga
 #TODO voimalik et vaja parandada threadide syncimist
 class TextFile(Thread):
     def __init__(self):
         Thread.__init__(self)
-        self.content = [("1","\n")]
-        self.queue = defaultdict(lambda:defaultdict(lambda:defaultdict(str)))
+        self.content = ""
+        self.queue = defaultdict(lambda:defaultdict(str))
         self.lock = Lock()
 
     def run(self):
         while 1:
             if not self.queue.keys():
                 continue
-            keys = self.queue.keys()
-            for i in keys:
-                self.checkEvents(i)
-                if len(self.queue[i]) == 0:
-                    self.queue.pop(i,None)
+            self.checkEvents()
 
 
-    def applyEvent(self,event,id):
-        if self.queue[event][id]["modification"] == "ADD_LETTER":
-            line = self.findLine(event)
-            index = self.content.index(line)
-            carIndex = int(self.queue[event][id]["index"])
-            data = line[1][:carIndex] + self.queue[event][id]["char"] + line[1][carIndex:]
-            self.content[index] = (event,data)
-        elif self.queue[event][id]["modification"] == "REMOVE_LETTER":
-            line = self.findLine(event)
-            index = self.content.index(line)
-            carIndex = int(self.queue[event][id]["index"])
-            data = line[1][:carIndex]+ line[1][carIndex+1:]
-            self.content[index] = (event,data)
-        elif self.queue[event][id]["modification"] == "ADD_LINE":
-            line = self.findLine(event)
-            index = self.content.index(line)
-            self.content.insert(index+1,("2","\n"))
-        elif self.queue[event][id]["modification"] == "REMOVE_LINE":
-            line = self.findLine(event)
-            index = self.content.index(line)
-            del self.content[index]
+    def applyEvent(self,id):
+        if self.queue[id]["modification"] == "ADD_LETTER":
+            carIndex = int(self.queue[id]["index"])
+            self.content = self.content[:carIndex] + self.queue[id]["char"] + self.content[carIndex:]
+        elif self.queue[id]["modification"] == "REMOVE_LETTER":
+            carIndex = int(self.queue[id]["index"])
+            self.content = self.content[:carIndex]+ self.content[carIndex+1:]
         return
 
-    def checkEvents(self,event):
-        events = self.queue[event].keys()
+    def checkEvents(self):
+        events = self.queue.keys()
         events.sort()
         for i in events:
-            if self.queue[event][i]["Done"]:
-                self.applyEvent(event,i)
-                self.queue[event].pop(i,None)
+            if self.queue[i]["Done"]:
+                self.applyEvent(i)
+                self.queue.pop(i,None)
                 #MErge vms siin
             else:
                 if time() - int(i) >= 1000:
-                    self.queue[event].pop(i,None)
+                    self.queue.pop(i,None)
                 return
 
 
     def addLetter(self,data):
         with self.lock:
             parts = data.split(":")
-            lineId = parts[0]
-            reqtime = parts[1]
-            index = parts[2]
-            char = parts[3]
-            self.queue[lineId][reqtime]["index"] = index
-            self.queue[lineId][reqtime]["char"] = char
-            self.queue[lineId][reqtime]["modification"] = "ADD_LETTER"
-            self.queue[lineId][reqtime]["Done"] = True
+            ID = parts[0]
+            index = parts[1]
+            char = parts[2]
+            self.queue[ID]["index"] = index
+            self.queue[ID]["char"] = char
+            self.queue[ID]["modification"] = "ADD_LETTER"
+            self.queue[ID]["Done"] = True
             return
 
     def removeLetter(self,data):
         with self.lock:
             parts = data.split(":")
-            lineId = parts[0]
-            reqtime = parts[1]
-            index = parts[2]
-            self.queue[lineId][reqtime]["index"] = index
-            self.queue[lineId][reqtime]["modification"] = "REMOVE_LETTER"
-            self.queue[lineId][reqtime]["Done"] = True
-            return
-
-    def addLine(self, data):
-        with self.lock:
-            parts = data.split(":")
-            lineId = parts[0]
-            reqtime = parts[1]
-            self.queue[lineId][reqtime]["modification"] = "ADD_LINE"
-            self.queue[lineId][reqtime]["Done"] = True
-            return
-
-    def removeLine(self,data):
-        with self.lock:
-            parts = data.split(":")
-            lineId = parts[0]
-            reqtime = parts[1]
-            self.queue[lineId][reqtime]["modification"] = "REMOVE_LINE"
-            self.queue[lineId][reqtime]["Done"] = True
+            ID = parts[0]
+            index = parts[1]
+            self.queue[ID]["index"] = index
+            self.queue[ID]["modification"] = "REMOVE_LETTER"
+            self.queue[ID]["Done"] = True
             return
 
     def requestModification(self,data):
         with self.lock:
             now = int(time())
-            ID = data + ":" + str(now)
-            line = self.findLine(data)
-            self.queue[data][str(now)]["Done"] = False
-            self.queue[data][str(now)]["before"] = line[1]
+            ID = str(now)
+            self.queue[ID]["Done"] = False
+            self.queue[ID]["before"] = self.content
 
             return ID
 
     def getChanges(self):
         return self.content
-
-    def findLine(self,id):
-        for i in self.content:
-            if i[0] == id:
-                return i
 
     def getContent(self):
         with self.lock:

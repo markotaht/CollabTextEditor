@@ -26,7 +26,6 @@ class ClientHandler(Thread):
             rsp = self.protocol(m)
             if not self.send(rsp):
                 break
-            #sendUpdates
 
     def handle(self):
         self.start()
@@ -70,16 +69,9 @@ class ClientHandler(Thread):
         elif action == REQ_SEND_LETTER:
             self.file.addLetter(data)
             return RSP_SEND_LETTER_OK
-        elif action == REQ_ADD_NEW_LINE:
-            self.file.addLine(data)
-            return RSP_ADD_NEW_LINE_OK
-        elif action == REQ_REMOVE_LINE:
-            self.file.removeLine(data)
-            return RSP_REMOVE_LINE_OK
         elif action == REQ_SYNCHRONIZE:
             changes = self.file.getChanges()
-            data = ":".join(map(lambda x: serialize(x[0] + ":-:" + x[1]), changes))
-            data = serialize(data)
+            data = serialize(changes)
             return RSP_SYNCHRONIZE_OK + MSG_FIELD_SEP + data
         else:
             #Migi viga

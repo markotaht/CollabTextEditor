@@ -17,14 +17,12 @@ class Client():
         self.socket = None
         self.queue = Queue()
         self.queue.put((self._synchronise,[]))
-        self.createUI()
+    #    self.createUI()
     #    self.loop()
         #TESTIB Tahe saatmist ja eemaldamist.
         self.connect(('127.0.0.1',7777))
         self.sendLetter("a",0,"1")
     #    print self.removeLetter(0,"1")
-    #    print self.addNewLine("1")
-    #    print self.removeLine("2")
 
     def connect(self,srv_addr):
         self.socket = socket(AF_INET, SOCK_STREAM)
@@ -65,34 +63,12 @@ class Client():
         req = REQ_REMOVE_LETTER + MSG_FIELD_SEP + data
         return self.send(req)
 
-    def addNewLine(self, lineId):
-        args = [lineId]
-        self.queue.put((self._addNewLine, args))
-
-    def _addNewLine(self,args):
-        ID = self.requestModification(args[0])
-        data = serialize(ID)
-        req = REQ_ADD_NEW_LINE + MSG_FIELD_SEP + data
-        return self.send(req)
-
-    def removeLine(self, lineId):
-        args = [lineId]
-        self.queue.put((self._removeLine, args))
-
-    def _removeLine(self, args):
-        ID = self.requestModification(args[0])
-        data = serialize(ID)
-        req = REQ_REMOVE_LINE + MSG_FIELD_SEP + data
-        return self.send(req)
-
     def _synchronise(self,args):
 
         #Syncimne
         req = REQ_SYNCHRONIZE + MSG_FIELD_SEP
         data = self.send(req)
-        #Decode data coming from server
-        # map(lambda x: deserialize(x).split(":-:"), deserialize(data[2:]).split(":"))
-        #TODO Put data somewhere
+        content = deserialize(data[2:])
         self.queue.put((self._synchronise, []))
 
     def send(self,msg):
