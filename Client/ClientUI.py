@@ -1,8 +1,8 @@
 from Tkinter import *
-from threading import Thread
+from Client import *
 
 
-class ClienUI(Frame,Thread):
+class ClienUI(Frame, Thread):
     def __init__(self, client):
         Thread.__init__(self)
         self.client = client
@@ -162,10 +162,26 @@ class ClienUI(Frame,Thread):
         self.client.close()
         #TODO close ui
 
+
     def keyevent(self, event):
-        for char in event.char:
-            print("Key pressed %d" %ord(event.char))
-        return
+        print event.keysym
+        (lineId, index) = textField.index(INSERT).split(".")
+
+        if event.keysym == "BackSpace":
+            print "Pressed backspace"
+            print "Cursor position ", textField.index(INSERT)
+            self.client.removeLetter(index, lineId)
+        elif event.keysym == "Delete":
+            print "Pressed delete"
+            print "Cursor position ", textField.index(INSERT)
+            self.client.removeLetter(index, lineId)
+        else:
+            #Alot goes missing here
+            for char in event.char:
+                print("Key pressed %d" % ord(event.char))
+                print "Cursor position ", textField.index(INSERT)
+                print("Key pressed " + event.char)
+                self.client.sendLetter(event.char, index, lineId)
 
     def fileedit(self):
 
@@ -190,6 +206,7 @@ class ClienUI(Frame,Thread):
         managecollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.managecollaborators)
         managecollaboratorsButton.grid(row=0, column=2, padx=padx, pady=pady)
 
+        global textField
         textField = Text(top)
         textField.grid(row=1, column=0, padx=padx, pady=pady)
         textField.bind('<Key>', self.keyevent)
