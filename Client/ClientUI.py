@@ -224,7 +224,7 @@ class ClienUI(Frame,Thread):
         closeallButton = Button(buttons, text="Close all")
         closeallButton.grid(row=0, column=0, padx=padx, pady=pady)
 
-        closeclientButton = Button(buttons, text="Close client", command = self.closeClient())
+        closeclientButton = Button(buttons, text="Close client", command = self.closeClient)
         closeclientButton.grid(row=0, column=1, padx=padx, pady=pady)
 
         managecollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.managecollaborators)

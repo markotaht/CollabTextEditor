@@ -38,7 +38,7 @@ class Client():
     def requestModification(self):
         req = REQ_MODIFICATION + MSG_FIELD_SEP
         rsp = self.send(req)
-        return rsp[rsp.find(":")+1:]
+        return rsp[rsp.find(":"):]
 
     def sendLetter(self, letter, index):
         logging.info("Sending letter: " + letter + " index " + str(index))
@@ -71,6 +71,7 @@ class Client():
         data = self.send(req)
         content = deserialize(data[2:])
         self.queue.put((self._synchronise, []))
+        logging.info("Server has" + content)
 
     def send(self,msg):
         m = msg + MSG_SEP
