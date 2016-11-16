@@ -2,12 +2,35 @@ from Tkinter import *
 from threading import Thread
 
 
+#TODO move to commons
+def difference(s1, s2):
+    if len(s1) == len(s2):
+        return [i for i in xrange(len(s2)) if s1[i] != s2[i]][0]
+    #this detects additions
+    elif len(s1) > len(s2):
+        # check if we added into the middle or into the end
+        index = [i for i in xrange(len(s2)) if s1[i] != s2[i]]
+        if len(index) == 0:
+            return ("+", len(s1) - 1, s1[-1])
+        else:
+            return ("+", index[0], s2[index[0]])
+    #this detects removals
+    else:
+        # check if we added into the middle or into the end
+        index = [i for i in xrange(len(s1)) if s1[i] != s2[i]]
+        if len(index) == 0:
+            return ("-",(len(s2) - 1), s2[-1])
+        else:
+            return ("-",index[0], s2[index[0]])
+
+
 class ClienUI(Frame,Thread):
     def __init__(self, client):
         Thread.__init__(self)
         self.client = client
         self.content = Tk()
         self.initUI()
+        self.previoustext = ""
 
     def run(self):
         self.content.mainloop()
@@ -162,10 +185,27 @@ class ClienUI(Frame,Thread):
         self.client.close()
         #TODO close ui
 
-    def keyevent(self, event):
-        for char in event.char:
-            print("Key pressed %d" %ord(event.char))
-        return
+
+
+    #pushes changes if letters are added or deleted
+    #TODO get previoustext from server
+
+    def changed(self, event):
+        flag = textField.edit_modified()
+        if flag:  # prevent from getting called twice
+            print "changed called"
+            text = textField.get("0.0", 'end-1c')
+            print "text was", text
+            print "previous was", self.previoustext
+            index = difference(text, self.previoustext)
+            print "change was", index
+            if index[0] == "+":
+                self.client.sendLetter(index[2], index[1])
+            else:
+                self.client.removeLetter(index[1])
+            self.previoustext = text
+        textField.edit_modified(False)
+
 
     def fileedit(self):
 
@@ -190,9 +230,14 @@ class ClienUI(Frame,Thread):
         managecollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.managecollaborators)
         managecollaboratorsButton.grid(row=0, column=2, padx=padx, pady=pady)
 
+
+        global textField
         textField = Text(top)
         textField.grid(row=1, column=0, padx=padx, pady=pady)
-        textField.bind('<Key>', self.keyevent)
+        textField.bind('<<Modified>>', self.changed)
+        textField.focus_set()
+
+
 
         buttons = LabelFrame(top, text="Currently connected collabs")
         buttons.grid(row=1, column=2, padx=padx, pady=padx)

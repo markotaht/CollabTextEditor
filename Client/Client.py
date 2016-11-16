@@ -17,8 +17,8 @@ class Client():
         self.socket = None
         self.queue = Queue()
         self.queue.put((self._synchronise,[]))
-    #    self.createUI()
-    #    self.loop()
+        self.createUI()
+        self.loop()
         #TESTIB Tahe saatmist ja eemaldamist.
         self.connect(('127.0.0.1',7777))
         self.sendLetter("a",0)
@@ -41,6 +41,7 @@ class Client():
         return rsp[rsp.find(":")+1:]
 
     def sendLetter(self, letter, index):
+        logging.info("Sending letter: " + letter + " index " + str(index))
         args = [letter,index]
         self.queue.put((self._sendLetter, args))
 
@@ -53,6 +54,7 @@ class Client():
         return self.send(req)
 
     def removeLetter(self, index):
+        logging.info("Remove letter from index: " + str(index))
         args = [index]
         self.queue.put((self._removeLetter, args))
 
