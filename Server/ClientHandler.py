@@ -21,7 +21,7 @@ class ClientHandler(Thread):
     def run(self):
         while 1:
             m = self.receive()
-            logging.info("Server received " + m)
+            #logging.info("Server received " + m)
             if len(m) <= 0:
                 break
             rsp = self.protocol(m)

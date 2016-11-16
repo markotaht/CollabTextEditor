@@ -18,10 +18,10 @@ class Client():
         self.queue = Queue()
         self.queue.put((self._synchronise,[]))
         self.createUI()
-        self.loop()
+    #    self.loop()
         #TESTIB Tahe saatmist ja eemaldamist.
         self.connect(('127.0.0.1',7777))
-        self.sendLetter("a",0)
+   #     self.sendLetter("a",0)
     #    print self.removeLetter(0)
 
     def connect(self,srv_addr):
@@ -38,7 +38,7 @@ class Client():
     def requestModification(self):
         req = REQ_MODIFICATION + MSG_FIELD_SEP
         rsp = self.send(req)
-        return rsp[rsp.find(":"):]
+        return rsp[rsp.find(":")+1:]
 
     def sendLetter(self, letter, index):
         logging.info("Sending letter: " + letter + " index " + str(index))
@@ -70,8 +70,9 @@ class Client():
         req = REQ_SYNCHRONIZE + MSG_FIELD_SEP
         data = self.send(req)
         content = deserialize(data[2:])
+        print content
         self.queue.put((self._synchronise, []))
-        logging.info("Server has" + content)
+        #logging.info("Server has" + content)
 
     def send(self,msg):
         m = msg + MSG_SEP
