@@ -21,8 +21,8 @@ class Client():
     #    self.loop()
         #TESTIB Tahe saatmist ja eemaldamist.
         self.connect(('127.0.0.1',7777))
-        self.sendLetter("a",0,"1")
-    #    print self.removeLetter(0,"1")
+        self.sendLetter("a",0)
+    #    print self.removeLetter(0)
 
     def connect(self,srv_addr):
         self.socket = socket(AF_INET, SOCK_STREAM)
@@ -35,31 +35,30 @@ class Client():
                           ' %s ' % (srv_addr + (str(e),)))
         return False
 
-    def requestModification(self, lineid):
-        data = serialize(lineid)
-        req = REQ_MODIFICATION + MSG_FIELD_SEP + data
+    def requestModification(self):
+        req = REQ_MODIFICATION + MSG_FIELD_SEP
         rsp = self.send(req)
         return rsp[rsp.find(":")+1:]
 
-    def sendLetter(self, letter, index, lineId):
-        args = [letter,index,lineId]
+    def sendLetter(self, letter, index):
+        args = [letter,index]
         self.queue.put((self._sendLetter, args))
 
     def _sendLetter(self,args):
-        ID = self.requestModification(args[2])
+        ID = self.requestModification()
         logging.info("Change letter changeID: " + ID)
         data = ID + ":" + str(args[1]) + ":" +args[0]
         data = serialize(data)
         req = REQ_SEND_LETTER + MSG_FIELD_SEP + data
         return self.send(req)
 
-    def removeLetter(self, index, lineId):
-        args = [index, lineId]
+    def removeLetter(self, index):
+        args = [index]
         self.queue.put((self._removeLetter, args))
 
     def _removeLetter(self,args):
-        ID = self.requestModification(args[1])
-        data = serialize(ID + ":" + str(args[0]))
+        ID = self.requestModification()
+        data = serialize(ID +":"+str(args[0]))
         req = REQ_REMOVE_LETTER + MSG_FIELD_SEP + data
         return self.send(req)
 

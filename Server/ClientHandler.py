@@ -61,14 +61,16 @@ class ClientHandler(Thread):
     def protocol(self, message):
         action,data = self.handlePackage(message)
         if action == REQ_MODIFICATION:
-            id = self.file.requestModification(data)
+            id = self.file.requestModification()
             return RSP_MODIFICATION_OK + MSG_FIELD_SEP + id
         elif action == REQ_REMOVE_LETTER:
-            self.file.removeLetter(data)
-            return RSP_REMOVE_LETTER_OK
+            if self.file.removeLetter(data):
+                return RSP_REMOVE_LETTER_OK
+            return RSP_REMOVE_LETTER_NOTOK
         elif action == REQ_SEND_LETTER:
-            self.file.addLetter(data)
-            return RSP_SEND_LETTER_OK
+            if self.file.addLetter(data):
+                return RSP_SEND_LETTER_OK
+            return RSP_SEND_LETTER_NOTOK
         elif action == REQ_SYNCHRONIZE:
             changes = self.file.getChanges()
             data = serialize(changes)
