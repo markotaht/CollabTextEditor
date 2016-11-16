@@ -1,4 +1,4 @@
-from socket import AF_INET, SOCK_STREAM, socket, SHUT_WR
+from socket import AF_INET, SOCK_STREAM, socket, gethostname
 import ClientHandler, TextFile
 import logging
 logging.basicConfig(level=logging.DEBUG,\
@@ -44,7 +44,7 @@ class Server():
 if __name__ == '__main__':
     logging.info( 'Application started' )
     server = Server()
-    server.listen(('127.0.0.1',7777))
+    server.listen((gethostname(),7777))
     server.loop()
     logging.info ( 'Terminating ...' )
 

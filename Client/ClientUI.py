@@ -45,8 +45,11 @@ class ClienUI(Frame,Thread):
         disconnectButton = Button(top, text="Disconnect")
         disconnectButton.grid(row=0, column=0, padx=padx, pady=pady)
 
+        global textField
         textField = Text(top)
         textField.grid(row=1, column=0, padx=padx, pady=pady)
+        textField.bind('<<Modified>>', self.changed)
+        textField.focus_set()
 
         connectedcollabsFrame = LabelFrame(top, text="Currently connected collabs")
         connectedcollabsFrame.grid(row=1, column=1, padx=padx, pady=padx)
@@ -87,9 +90,12 @@ class ClienUI(Frame,Thread):
             print usernameEntry.get()
             print passwordEntry.get()
             print ipEntry.get()
-            #TODO close only when connection successful, else error message
-            window.destroy()
-            self.outsidefile()
+            ip,port = ipEntry.get().split(":")
+            if self.client.connect((ip,int(port))):
+                window.destroy()
+                self.outsidefile()
+            else:
+                print "ERROR, "*100
 
         connectButton = Button(top, text = "Connect", command=lambda: callback(top))
         connectButton.pack(side="bottom", padx=padx, pady=pady)

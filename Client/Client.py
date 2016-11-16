@@ -20,7 +20,7 @@ class Client():
         self.createUI()
     #    self.loop()
         #TESTIB Tahe saatmist ja eemaldamist.
-        self.connect(('127.0.0.1',7777))
+    #    self.connect(('192.168.56.1',7777))
    #     self.sendLetter("a",0)
     #    print self.removeLetter(0)
 
@@ -29,6 +29,7 @@ class Client():
         try:
             self.socket.connect(srv_addr)
             logging.info('Connected to ConcurrentEditing server at %s:%d' % srv_addr)
+            self.loop()
             return True
         except soc_err as e:
             logging.error('Can not connect to MessageBoard server at %s:%d' \
@@ -47,6 +48,7 @@ class Client():
 
     def _sendLetter(self,args):
         ID = self.requestModification()
+        print "here"
         logging.info("Change letter changeID: " + ID)
         data = ID + ":" + str(args[1]) + ":" +args[0]
         data = serialize(data)
@@ -70,7 +72,6 @@ class Client():
         req = REQ_SYNCHRONIZE + MSG_FIELD_SEP
         data = self.send(req)
         content = deserialize(data[2:])
-        print content
         self.queue.put((self._synchronise, []))
         #logging.info("Server has" + content)
 
@@ -151,6 +152,4 @@ class Client():
 if __name__ == '__main__':
     c = Client()
 
-    t = c.loop()
-
-    t.join()
+  #  t = c.loop()
