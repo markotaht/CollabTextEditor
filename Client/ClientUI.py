@@ -13,7 +13,8 @@ def difference(s1, s2):
         if len(index) == 0:
             return ("+", len(s1) - 1, s1[-1])
         else:
-            return ("+", index[0], s2[index[0]])
+            print "right", index
+            return ("+", index[0], s1[index[0]])
     #this detects removals
     else:
         # check if we added into the middle or into the end
