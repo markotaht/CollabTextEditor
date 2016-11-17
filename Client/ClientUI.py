@@ -36,6 +36,7 @@ class ClienUI(Frame,Thread):
     def run(self):
         self.content.mainloop()
 
+    #Kellegi teise fail
     def outsidefile(self):
         padx = 2
         pady = 2
@@ -213,9 +214,9 @@ class ClienUI(Frame,Thread):
             self.previoustext = text
         textField.edit_modified(False)
 
-
+    #Mina kui host
     def fileedit(self):
-        self.client.connect()
+        self.client.openLocally()
         #TODO add something to make differ between new file and edit file
         #TODO get text from server
         padx = 2

@@ -1,4 +1,4 @@
-from socket import AF_INET, SOCK_STREAM, socket, SHUT_RD
+from socket import AF_INET, SOCK_STREAM, socket, SHUT_RD, gethostname
 from socket import error as soc_err
 from threading import Thread, Lock
 from Queue import Queue
@@ -74,6 +74,10 @@ class Client():
         content = deserialize(data[2:])
         self.queue.put((self._synchronise, []))
         #logging.info("Server has" + content)
+
+    def openLocally(self):
+        #run server
+        self.connect((gethostname(),7777))
 
     def send(self,msg):
         m = msg + MSG_SEP
