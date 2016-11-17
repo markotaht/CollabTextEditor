@@ -214,7 +214,7 @@ class ClienUI(Frame,Thread):
 
 
     def fileedit(self):
-
+        self.client.connect()
         #TODO add something to make differ between new file and edit file
         #TODO get text from server
         padx = 2
