@@ -8,19 +8,63 @@ logging.basicConfig(level=logging.DEBUG, \
                     format='%(asctime)s (%(threadName)-2s) %(message)s', )
 LOG = logging.getLogger()
 
+from settings import PROJECT_ROOT
+FILES_DIR = PROJECT_ROOT + "/Files"
+
+import os.path
 #TODO voimalik et vaja parandada threadide syncimist
 class TextFile(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.content = ""
+        self.collaborators = defaultdict(str)
         self.queue = defaultdict(lambda:defaultdict(str))
+        self.done = False
         self.lock = Lock()
+
+    def openfile(self, name):
+        if os.path.isfile(name + "_content.txt"):
+            file = open(name+"_content.txt")
+            self.content = file.read()
+            file.close()
+            collabs = open(name+"_collaborators.txt")
+            for line in collabs:
+                parts = line.strip().split(":")
+                self.collaborators[parts[0]] = parts[1]
+            file.close()
+        self.name = name
+        self.collaborators["me"] = "admin"
+
+    def savefile(self):
+        file = open(self.name + "_content.txt","w")
+        file.write(self.content)
+        file.close()
+
+        collabs = open(self.name+"_collaborators.txt")
+        for k,v in self.collaborators.iteritems():
+            collabs.write(k+":"+v+"\n")
+        collabs.close()
+
+    def addCollaborator(self,name,password):
+        self.collaborators[name] = password
+
+    def checkCollaborator(self,name,password):
+        if name in self.collaborators and self.collaborators[name] == password:
+            LOG.info(name + " joined the server")
+            return True
+        return False
+
+    def end(self):
+        self.done = True
 
     def run(self):
         while 1:
             if not self.queue.keys():
+                if self.done:
+                    break
                 continue
             self.checkEvents()
+        self.savefile()
 
 
     def applyEvent(self,id):

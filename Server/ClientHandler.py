@@ -76,6 +76,11 @@ class ClientHandler(Thread):
             changes = self.file.getChanges()
             data = serialize(changes)
             return RSP_SYNCHRONIZE_OK + MSG_FIELD_SEP + data
+        elif action == INTRODUCTION:
+            name,password = data.split(":")
+            if self.file.checkCollaborator(name,password):
+                return RSP_INTRODUCTION_OK
+            return RSP_INTRODUCTION_NOTOK
         else:
             #Migi viga
             return 0

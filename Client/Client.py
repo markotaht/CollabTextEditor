@@ -5,6 +5,8 @@ from Queue import Queue
 import ClientUI
 from Commons import *
 
+from Server.Server import Server
+
 import logging
 FORMAT='%(asctime)s (%(threadName)-2s) %(message)s'
 logging.basicConfig(level=logging.INFO,format=FORMAT)
@@ -15,6 +17,7 @@ class Client():
         self.lock = Lock()
         self.file = ""
         self.socket = None
+        self.server = None
         self.queue = Queue()
         self.queue.put((self._synchronise,[]))
         self.createUI()
@@ -24,17 +27,26 @@ class Client():
    #     self.sendLetter("a",0)
     #    print self.removeLetter(0)
 
-    def connect(self,srv_addr):
+    def connect(self,srv_addr,name,password):
         self.socket = socket(AF_INET, SOCK_STREAM)
         try:
             self.socket.connect(srv_addr)
             logging.info('Connected to ConcurrentEditing server at %s:%d' % srv_addr)
+            if self.sendIntroduction(name,password) == RSP_INTRODUCTION_NOTOK:
+                self.socket.close()
+                return False
             self.loop()
             return True
         except soc_err as e:
             logging.error('Can not connect to MessageBoard server at %s:%d' \
                           ' %s ' % (srv_addr + (str(e),)))
         return False
+
+    def sendIntroduction(self,name,password):
+        data = name + ":" + password
+        data =serialize(data)
+        req = INTRODUCTION+MSG_FIELD_SEP+data
+        return self.send(req)
 
     def requestModification(self):
         req = REQ_MODIFICATION + MSG_FIELD_SEP
@@ -75,9 +87,14 @@ class Client():
         self.queue.put((self._synchronise, []))
         #logging.info("Server has" + content)
 
+    def addColaborator(self,name,password):
+        self.server.file.addCollaborator(name,password)
+
     def openLocally(self):
         #run server
-        self.connect((gethostname(),7777))
+        self.server = Server()
+        self.server.start()
+        self.connect(self.server.server_addr,"me","admin")
 
     def send(self,msg):
         m = msg + MSG_SEP
@@ -155,5 +172,3 @@ class Client():
 
 if __name__ == '__main__':
     c = Client()
-
-  #  t = c.loop()
