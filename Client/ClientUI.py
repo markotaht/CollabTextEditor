@@ -93,7 +93,7 @@ class ClienUI(Frame,Thread):
             print passwordEntry.get()
             print ipEntry.get()
             ip,port = ipEntry.get().split(":")
-            if self.client.connect((ip,int(port))):
+            if self.client.connect((ip,int(port)),usernameEntry.get(),passwordEntry.get()):
                 window.destroy()
                 self.outsidefile()
             else:
