@@ -19,6 +19,8 @@ RSP_INTRODUCTION_NOTOK = "8"
 
 MSG_FIELD_SEP = ":"
 
+DEFAULT_PORT = 7777;
+
 DEFAULT_RCV_BUFSIZE = 1024
 
 from base64 import decodestring, encodestring

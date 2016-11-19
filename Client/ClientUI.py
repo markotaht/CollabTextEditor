@@ -1,6 +1,6 @@
 from Tkinter import *
 from threading import Thread
-
+from Commons import DEFAULT_PORT
 
 #TODO move to commons
 def difference(s1, s2):
@@ -25,7 +25,7 @@ def difference(s1, s2):
             return ("-",index[0], s2[index[0]])
 
 
-class ClienUI(Frame,Thread):
+class ClientUI(Frame,Thread):
     def __init__(self, client):
         Thread.__init__(self)
         self.client = client
@@ -36,13 +36,13 @@ class ClienUI(Frame,Thread):
     def run(self):
         self.content.mainloop()
 
-    #Kellegi teise fail
-    def outsidefile(self):
+    #Editing a remote file
+    def remoteFile(self):
         padx = 2
         pady = 2
 
         top = Toplevel()
-        top.title("Outside file + filename")
+        top.title("Remote file + filename")
 
         disconnectButton = Button(top, text="Disconnect")
         disconnectButton.grid(row=0, column=0, padx=padx, pady=pady)
@@ -58,10 +58,10 @@ class ClienUI(Frame,Thread):
 
         listbox = Listbox(connectedcollabsFrame)
         listbox.grid(row=0, column=0, padx=padx, pady=pady)
-        listbox.insert(END, "Antonio")
+        #listbox.insert(END, "Antonio")
 
 
-    def connectdialog(self):
+    def connectDialog(self):
 
         padx = 2
         pady = 2
@@ -74,12 +74,16 @@ class ClienUI(Frame,Thread):
 
         usernameEntry = Entry(top)
         usernameEntry.grid(row=0, column=1, padx=padx, pady=pady)
+        #TODO: Remove default placeholders later
+        usernameEntry.insert(0, 'me')
 
         passwordLabel = Label(top, text = "Password:")
         passwordLabel.grid(row=1, column=0, padx=padx, pady=pady)
 
         passwordEntry = Entry(top, show = "*")
         passwordEntry.grid(row=1, column=1, padx=padx, pady=pady)
+        # TODO: Remove default placeholders later
+        passwordEntry.insert(0, 'admin')
 
         ipLabel = Label(top, text="IP & Port:")
         ipLabel.grid(row=2, column=0, padx=padx, pady=pady)
@@ -92,10 +96,22 @@ class ClienUI(Frame,Thread):
             print usernameEntry.get()
             print passwordEntry.get()
             print ipEntry.get()
-            ip,port = ipEntry.get().split(":")
+
+            if len(ipEntry.get()) == 0:
+                #No ip specified
+                ip = "127.0.0.1"
+                port = str(DEFAULT_PORT)
+            elif ":" not in ipEntry.get():
+                #No port specified
+                ip = ipEntry.get()
+                port = str(DEFAULT_PORT)
+            else:
+                #Ip and port both specified
+                ip,port = ipEntry.get().split(":")
+
             if self.client.connect((ip,int(port)),usernameEntry.get(),passwordEntry.get()):
                 window.destroy()
-                self.outsidefile()
+                self.remoteFile()
             else:
                 print "ERROR, "*100
 
@@ -104,7 +120,7 @@ class ClienUI(Frame,Thread):
         connectButton.grid(row=3, column=1)
 
     #updates the collaborator list
-    def updatelist(self, un, pw, addnew, window):
+    def updateCollaboratorsList(self, un, pw, addnew, window):
 
         if addnew:
             print "added", un, pw
@@ -117,7 +133,7 @@ class ClienUI(Frame,Thread):
             listbox.insert(END, un+"    "+pw)
             window.destroy()
 
-    def editdialog(self, isAddingnew):
+    def editCollaboratorsDialog(self, isAddingNew):
         padx = 2
         pady = 2
 
@@ -140,7 +156,7 @@ class ClienUI(Frame,Thread):
         cancelButton = Button(top, text="cancel", command = top.destroy)
         cancelButton.grid(row=2, column=0, padx=padx, pady=pady)
 
-        doneButton = Button(top, text="done", command = lambda: self.updatelist(usernameEntry.get(), passwordEntry.get(), isAddingnew, top))
+        doneButton = Button(top, text="done", command = lambda: self.updateCollaboratorsList(usernameEntry.get(), passwordEntry.get(), isAddingNew, top))
         doneButton.grid(row=2, column=1, padx=padx, pady=pady)
 
 
@@ -154,13 +170,13 @@ class ClienUI(Frame,Thread):
             passwordEntry.insert(0, un[1])
 
 
-    def deletecollaborator(self):
+    def deleteCollaborator(self):
 
         un = listbox.get(ANCHOR)
         print "delete", un
         listbox.delete(ANCHOR)
 
-    def managecollaborators(self):
+    def manageCollaborators(self):
 
         padx = 2
         pady = 2
@@ -180,13 +196,13 @@ class ClienUI(Frame,Thread):
         listbox.grid(row=2, column=0, padx=padx, pady=pady)
         listbox.insert(END, "Antonio    password")
 
-        addButton = Button(buttons, text="add", command = lambda: self.editdialog(True))
+        addButton = Button(buttons, text="add", command = lambda: self.editCollaboratorsDialog(True))
         addButton.grid(row=0, column=0, padx=padx, pady=pady)
 
-        editButton = Button(buttons, text="edit", command = lambda: self.editdialog(False))
+        editButton = Button(buttons, text="edit", command = lambda: self.editCollaboratorsDialog(False))
         editButton.grid(row=0, column=1, padx=padx, pady=pady)
 
-        removeButton = Button(buttons, text="remove", command= self.deletecollaborator)
+        removeButton = Button(buttons, text="remove", command= self.deleteCollaborator)
         removeButton.grid(row=0, column=2, padx=padx, pady=pady)
 
     def closeClient(self):
@@ -235,8 +251,8 @@ class ClienUI(Frame,Thread):
         closeclientButton = Button(buttons, text="Close client", command = self.closeClient)
         closeclientButton.grid(row=0, column=1, padx=padx, pady=pady)
 
-        managecollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.managecollaborators)
-        managecollaboratorsButton.grid(row=0, column=2, padx=padx, pady=pady)
+        manageCollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.manageCollaborators)
+        manageCollaboratorsButton.grid(row=0, column=2, padx=padx, pady=pady)
 
 
         global textField
@@ -265,7 +281,7 @@ class ClienUI(Frame,Thread):
         self.edityourfileButton = Button(text = "Edit your file", command = self.fileedit)
         self.edityourfileButton.grid(row = 1, column = 0, padx = padx, pady = pady)
 
-        self.editelsefileButton = Button(text = "Edit outside file", command = self.connectdialog)
+        self.editelsefileButton = Button(text = "Edit outside file", command = self.connectDialog)
         self.editelsefileButton.grid(row = 0, column = 1, padx = padx, pady = pady)
 
         return True

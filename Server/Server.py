@@ -12,7 +12,7 @@ class Server(Thread):
         self.file = TextFile.TextFile()
         self.file.openfile("Demo")
         self.file.start()
-        self.server_addr = (gethostname(), 7777)
+        self.server_addr = ("0.0.0.0", 7777)
 
     def run(self):
         logging.info('Application started')

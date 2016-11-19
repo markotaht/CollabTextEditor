@@ -151,7 +151,7 @@ class Client():
         self.queue.put(None)
 
     def createUI(self):
-        self.ui = ClientUI.ClienUI(self)
+        self.ui = ClientUI.ClientUI(self)
         self.ui.start();
 
     def loop(self):
