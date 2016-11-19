@@ -54,7 +54,7 @@ class Client():
     def requestModification(self):
         req = REQ_MODIFICATION + MSG_FIELD_SEP
         rsp = self.send(req)
-        return rsp[rsp.find(":")+1:]
+        return rsp.split(":")
 
     def processLocalChange(self, textField, oldVersion, newVersion, changeType, changeIndex, changeChar):
         print(oldVersion + " -> " + newVersion)
@@ -72,7 +72,9 @@ class Client():
         self.queue.put((self._sendLetter, args))
 
     def _sendLetter(self,args):
-        ID = self.requestModification()
+        code,ID = self.requestModification()
+        if code == RSP_MODIFICATION_NOTOK:
+            return
         data = ID + ":" + str(args[1]) + ":" +args[0]
         data = serialize(data)
         req = REQ_SEND_LETTER + MSG_FIELD_SEP + data
@@ -85,7 +87,9 @@ class Client():
         self.queue.put((self._removeLetter, args))
 
     def _removeLetter(self,args):
-        ID = self.requestModification()
+        code, ID = self.requestModification()
+        if code == RSP_MODIFICATION_NOTOK:
+            return
         data = serialize(ID +":"+str(args[0]))
         req = REQ_REMOVE_LETTER + MSG_FIELD_SEP + data
         return self.send(req)

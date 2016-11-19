@@ -23,6 +23,7 @@ class TextFile(Thread):
         self.done = False
         self.lock = Lock()
         self.idCounter = 0;
+        self.lukk = False
 
     def openfile(self, name):
         if os.path.isfile(name + "_content.txt"):
@@ -78,6 +79,7 @@ class TextFile(Thread):
             carIndex = int(self.queue[id]["index"])
             LOG.info("Removing a letter")
             self.content = self.content[:carIndex]+ self.content[carIndex+1:]
+        self.lukk = False
         return
 
     def checkEvents(self):
@@ -122,8 +124,11 @@ class TextFile(Thread):
 
     def requestModification(self):
         with self.lock:
+            if self.lukk:
+                return False
             ID = "ID" + str(self.idCounter)
             self.idCounter += 1
+            self.lukk = True
             self.queue[ID]["done"] = False
             self.queue[ID]["before"] = self.content
             self.queue[ID]["time"] = str(int(time()))

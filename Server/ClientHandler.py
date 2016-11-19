@@ -69,6 +69,8 @@ class ClientHandler(Thread):
 
         if action == REQ_MODIFICATION:
             id = self.file.requestModification()
+            if not id:
+                return RSP_MODIFICATION_NOTOK + MSG_FIELD_SEP
             return RSP_MODIFICATION_OK + MSG_FIELD_SEP + str(id)
         elif action == REQ_REMOVE_LETTER:
             logging.info("Attempting to remove a letter")
