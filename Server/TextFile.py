@@ -16,11 +16,13 @@ import os.path
 class TextFile(Thread):
     def __init__(self):
         Thread.__init__(self)
+        self.setName("SERVER-FILE")
         self.content = ""
         self.collaborators = defaultdict(str)
         self.queue = defaultdict(lambda:defaultdict(str))
         self.done = False
         self.lock = Lock()
+        self.idCounter = 0;
 
     def openfile(self, name):
         if os.path.isfile(name + "_content.txt"):
@@ -69,10 +71,12 @@ class TextFile(Thread):
 
     def applyEvent(self,id):
         if self.queue[id]["modification"] == "ADD_LETTER":
+            LOG.info("Adding a letter")
             carIndex = int(self.queue[id]["index"])
             self.content = self.content[:carIndex] + self.queue[id]["char"] + self.content[carIndex:]
         elif self.queue[id]["modification"] == "REMOVE_LETTER":
             carIndex = int(self.queue[id]["index"])
+            LOG.info("Removing a letter")
             self.content = self.content[:carIndex]+ self.content[carIndex+1:]
         return
 
@@ -80,12 +84,12 @@ class TextFile(Thread):
         events = self.queue.keys()
         events.sort()
         for i in events:
-            if self.queue[i]["Done"]:
+            if self.queue[i]["done"]:
                 self.applyEvent(i)
                 self.queue.pop(i,None)
-                #MErge vms siin
+                #Merge vms siin
             else:
-                if time() - int(i) >= 1000:
+                if time() - int(self.queue[i]["time"]) >= 1000:
                     self.queue.pop(i,None)
                 return
 
@@ -101,7 +105,7 @@ class TextFile(Thread):
             self.queue[ID]["index"] = index
             self.queue[ID]["char"] = char
             self.queue[ID]["modification"] = "ADD_LETTER"
-            self.queue[ID]["Done"] = True
+            self.queue[ID]["done"] = True
             return True
 
     def removeLetter(self,data):
@@ -113,16 +117,16 @@ class TextFile(Thread):
                 return False
             self.queue[ID]["index"] = index
             self.queue[ID]["modification"] = "REMOVE_LETTER"
-            self.queue[ID]["Done"] = True
+            self.queue[ID]["done"] = True
             return True
 
     def requestModification(self):
         with self.lock:
-            now = int(time())
-            ID = str(now)
-            self.queue[ID]["Done"] = False
+            ID = "ID" + str(self.idCounter)
+            self.idCounter += 1
+            self.queue[ID]["done"] = False
             self.queue[ID]["before"] = self.content
-
+            self.queue[ID]["time"] = str(int(time()))
             return ID
 
     def getChanges(self):

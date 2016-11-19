@@ -11,8 +11,10 @@ from threading import Thread, Lock
 
 
 class ClientHandler(Thread):
-    def __init__(self, client_socket, client_addr, file):
+    def __init__(self, server, client_socket, client_addr, file):
         Thread.__init__(self)
+        self.setName("SERVER-CLIENTHANDLER")
+        self.server = server
         self.client_socket = client_socket
         self.client_addr = client_addr
         self.file = file
@@ -21,7 +23,6 @@ class ClientHandler(Thread):
     def run(self):
         while 1:
             m = self.receive()
-            #logging.info("Server received " + m)
             if len(m) <= 0:
                 break
             rsp = self.protocol(m)
@@ -61,15 +62,24 @@ class ClientHandler(Thread):
 
     def protocol(self, message):
         action,data = self.handlePackage(message)
+
+        if action != REQ_SYNCHRONIZE:
+            #Prevent spam from synchronization
+            logging.info("Server received " + action + ":" + data)
+
         if action == REQ_MODIFICATION:
             id = self.file.requestModification()
-            return RSP_MODIFICATION_OK + MSG_FIELD_SEP + id
+            return RSP_MODIFICATION_OK + MSG_FIELD_SEP + str(id)
         elif action == REQ_REMOVE_LETTER:
+            logging.info("Attempting to remove a letter")
             if self.file.removeLetter(data):
+                logging.info("Letter removed successfully")
                 return RSP_REMOVE_LETTER_OK
             return RSP_REMOVE_LETTER_NOTOK
         elif action == REQ_SEND_LETTER:
+            logging.info("Attempting to add a letter")
             if self.file.addLetter(data):
+                logging.info("Letter added successfully")
                 return RSP_SEND_LETTER_OK
             return RSP_SEND_LETTER_NOTOK
         elif action == REQ_SYNCHRONIZE:
@@ -82,7 +92,7 @@ class ClientHandler(Thread):
                 return RSP_INTRODUCTION_OK
             return RSP_INTRODUCTION_NOTOK
         else:
-            #Migi viga
+            #An error occured
             return 0
 
     def handlePackage(self,package):

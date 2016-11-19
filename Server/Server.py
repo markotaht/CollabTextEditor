@@ -1,5 +1,6 @@
-from socket import AF_INET, SOCK_STREAM, socket, gethostname
+from socket import AF_INET, SOCK_STREAM, socket
 from threading import Thread
+from Commons import DEFAULT_PORT, MSG_FIELD_SEP, serialize
 import ClientHandler, TextFile
 import logging
 logging.basicConfig(level=logging.DEBUG,\
@@ -9,10 +10,12 @@ class Server(Thread):
 
     def __init__(self):
         Thread.__init__(self)
+        self.setName("SERVER")
         self.file = TextFile.TextFile()
         self.file.openfile("Demo")
         self.file.start()
-        self.server_addr = ("0.0.0.0", 7777)
+        self.clientHandlers = []
+        self.server_addr = ("0.0.0.0", DEFAULT_PORT)
 
     def run(self):
         logging.info('Application started')
@@ -31,7 +34,7 @@ class Server(Thread):
 
 
     def loop(self):
-        logging.info( 'Falling to serving loop, press Ctrl+C to terminate ...' )
+        logging.info( 'Server loop started' )
         handlers = []
         try:
             while 1:
@@ -39,7 +42,8 @@ class Server(Thread):
                 logging.info('Awaiting new clients ...')
                 client_socket, client_addr = self.socket.accept()
                 logging.info("Client joined from %s:%s"%client_addr)
-                c = ClientHandler.ClientHandler(client_socket, client_addr,self.file)
+                c = ClientHandler.ClientHandler(self, client_socket, client_addr,self.file)
+                self.clientHandlers.append(c)
                 handlers.append(c)
                 c.handle()
         except KeyboardInterrupt:
@@ -55,6 +59,6 @@ class Server(Thread):
 if __name__ == '__main__':
     logging.info( 'Application started' )
     server = Server()
-    server.listen((gethostname(),7777))
+    server.listen(("0.0.0.0", DEFAULT_PORT))
     server.loop()
     logging.info ( 'Terminating ...' )

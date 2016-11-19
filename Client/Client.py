@@ -1,9 +1,11 @@
-from socket import AF_INET, SOCK_STREAM, socket, SHUT_RD, gethostname
+from socket import AF_INET, SOCK_STREAM, socket, SHUT_RD
 from socket import error as soc_err
 from threading import Thread, Lock
 from Queue import Queue
 import ClientUI
 from Commons import *
+import time
+import Tkinter
 
 from Server.Server import Server
 
@@ -20,8 +22,8 @@ class Client():
         self.server = None
         self.queue = Queue()
         self.queue.put((self._synchronise,[]))
+        self.textField = None
         self.createUI()
-    #    self.loop()
         #TESTIB Tahe saatmist ja eemaldamist.
     #    self.connect(('192.168.56.1',7777))
    #     self.sendLetter("a",0)
@@ -36,9 +38,10 @@ class Client():
                 self.socket.close()
                 return False
             self.loop()
+
             return True
         except soc_err as e:
-            logging.error('Can not connect to MessageBoard server at %s:%d' \
+            logging.error('Can not connect to the server at %s:%d' \
                           ' %s ' % (srv_addr + (str(e),)))
         return False
 
@@ -53,6 +56,16 @@ class Client():
         rsp = self.send(req)
         return rsp[rsp.find(":")+1:]
 
+    def processLocalChange(self, textField, oldVersion, newVersion, changeType, changeIndex, changeChar):
+        print(oldVersion + " -> " + newVersion)
+        print(changeType + "" + changeChar + " at " + str(changeIndex))
+
+        if changeType == "+":
+            self.sendLetter(changeChar, changeIndex)
+        elif changeType == "-":
+            self.removeLetter(changeIndex)
+
+
     def sendLetter(self, letter, index):
         logging.info("Sending letter: " + letter + " index " + str(index))
         args = [letter,index]
@@ -60,11 +73,10 @@ class Client():
 
     def _sendLetter(self,args):
         ID = self.requestModification()
-        print "here"
-        logging.info("Change letter changeID: " + ID)
         data = ID + ":" + str(args[1]) + ":" +args[0]
         data = serialize(data)
         req = REQ_SEND_LETTER + MSG_FIELD_SEP + data
+        logging.info("\"Add letter\" change with changeID " + ID + " sent.")
         return self.send(req)
 
     def removeLetter(self, index):
@@ -80,12 +92,24 @@ class Client():
 
     def _synchronise(self,args):
 
-        #Syncimne
+        #Synchronization
         req = REQ_SYNCHRONIZE + MSG_FIELD_SEP
         data = self.send(req)
-        content = deserialize(data[2:])
+        content = deserialize(data[3:])
+
+        #print(content)
+
+        if(self.textField != None):
+            try:
+                self.textField.delete(0,Tkinter.END)
+            except:
+                pass
+            self.textField.insert(0,content)
+
+
         self.queue.put((self._synchronise, []))
         #logging.info("Server has" + content)
+        return
 
     def addColaborator(self,name,password):
         self.server.file.addCollaborator(name,password)
@@ -94,7 +118,9 @@ class Client():
         #run server
         self.server = Server()
         self.server.start()
-        self.connect(self.server.server_addr,"me","admin")
+        time.sleep(0.01)
+        self.connect(("127.0.0.1", 7777),"me","admin")
+        logging.info("Connected to server.")
 
     def send(self,msg):
         m = msg + MSG_SEP
@@ -155,20 +181,25 @@ class Client():
         self.ui.start();
 
     def loop(self):
-        func = Thread(target=self._loop, args=(self,))
-        func.start()
-        return func
+        sendThread = Thread(target=self._sendLoop, args=(self,))
+        sendThread.setName("CLIENT-SEND-LOOP")
+        sendThread.start()
 
-    def _loop(self, parent):
-        logging.info("Receiver loop...")
-        while not parent.queue.empty():
-            event = parent.queue.get()
-            try:
-                if event == None:
+        return
+
+    def _sendLoop(self, parent):
+        logging.info("Starting client sender loop...")
+        while 1:
+            while not parent.queue.empty():
+                event = parent.queue.get()
+                try:
+                    if event == None:
+                        break
+                    event[0](event[1])
+                except soc_err:
                     break
-                event[0](event[1])
-            except soc_err:
-                break
+
+            time.sleep(0.001)
 
 if __name__ == '__main__':
     c = Client()

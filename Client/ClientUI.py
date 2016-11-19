@@ -1,29 +1,7 @@
 from Tkinter import *
 from threading import Thread
 from Commons import DEFAULT_PORT
-
-#TODO move to commons
-def difference(s1, s2):
-    if len(s1) == len(s2):
-        return [i for i in xrange(len(s2)) if s1[i] != s2[i]][0]
-    #this detects additions
-    elif len(s1) > len(s2):
-        # check if we added into the middle or into the end
-        index = [i for i in xrange(len(s2)) if s1[i] != s2[i]]
-        if len(index) == 0:
-            return ("+", len(s1) - 1, s1[-1])
-        else:
-            print "right", index
-            return ("+", index[0], s1[index[0]])
-    #this detects removals
-    else:
-        # check if we added into the middle or into the end
-        index = [i for i in xrange(len(s1)) if s1[i] != s2[i]]
-        if len(index) == 0:
-            return ("-",(len(s2) - 1), s2[-1])
-        else:
-            return ("-",index[0], s2[index[0]])
-
+from Util import differenceBetween
 
 class ClientUI(Frame,Thread):
     def __init__(self, client):
@@ -31,7 +9,7 @@ class ClientUI(Frame,Thread):
         self.client = client
         self.content = Tk()
         self.initUI()
-        self.previoustext = ""
+        self.oldText = ""
 
     def run(self):
         self.content.mainloop()
@@ -210,24 +188,17 @@ class ClientUI(Frame,Thread):
         #TODO close ui
 
 
-
-    #pushes changes if letters are added or deleted
-    #TODO get previoustext from server
-
+    #Sends local changes to be processed by client
     def changed(self, event):
         flag = textField.edit_modified()
         if flag:  # prevent from getting called twice
-            print "changed called"
-            text = textField.get("0.0", 'end-1c')
-            print "text was", text
-            print "previous was", self.previoustext
-            index = difference(text, self.previoustext)
-            print "change was", index
-            if index[0] == "+":
-                self.client.sendLetter(index[2], index[1])
-            else:
-                self.client.removeLetter(index[1])
-            self.previoustext = text
+            print "Text changed locally"
+            newText = textField.get("0.0", 'end-1c')
+            #print "Old Text: ", self.oldText
+            #print "New Text: ", newText
+            index = differenceBetween(newText, self.oldText)
+            self.client.processLocalChange(textField, self.oldText, newText, index[0], index[1], index[2])
+            self.oldText = newText
         textField.edit_modified(False)
 
     #Mina kui host
@@ -261,7 +232,7 @@ class ClientUI(Frame,Thread):
         textField.bind('<<Modified>>', self.changed)
         textField.focus_set()
 
-
+        self.client.textField = textField
 
         buttons = LabelFrame(top, text="Currently connected collabs")
         buttons.grid(row=1, column=2, padx=padx, pady=padx)
