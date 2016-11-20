@@ -97,30 +97,28 @@ class TextFile(Thread):
 
 
     def addLetter(self,data):
-        with self.lock:
-            parts = data.split(":")
-            ID = parts[0]
-            index = parts[1]
-            char = parts[2]
-            if not ID in self.queue:
-                return False
-            self.queue[ID]["index"] = index
-            self.queue[ID]["char"] = char
-            self.queue[ID]["modification"] = "ADD_LETTER"
-            self.queue[ID]["done"] = True
-            return True
+        parts = data.split(":")
+        ID = parts[0]
+        index = parts[1]
+        char = parts[2]
+        if not ID in self.queue:
+            return False
+        self.queue[ID]["index"] = index
+        self.queue[ID]["char"] = char
+        self.queue[ID]["modification"] = "ADD_LETTER"
+        self.queue[ID]["done"] = True
+        return True
 
     def removeLetter(self,data):
-        with self.lock:
-            parts = data.split(":")
-            ID = parts[0]
-            index = parts[1]
-            if not ID in self.queue:
-                return False
-            self.queue[ID]["index"] = index
-            self.queue[ID]["modification"] = "REMOVE_LETTER"
-            self.queue[ID]["done"] = True
-            return True
+        parts = data.split(":")
+        ID = parts[0]
+        index = parts[1]
+        if not ID in self.queue:
+            return False
+        self.queue[ID]["index"] = index
+        self.queue[ID]["modification"] = "REMOVE_LETTER"
+        self.queue[ID]["done"] = True
+        return True
 
     def requestModification(self):
         with self.lock:

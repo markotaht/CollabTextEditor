@@ -21,7 +21,6 @@ class Client():
         self.socket = None
         self.server = None
         self.queue = Queue()
-        self.queue.put((self._synchronise,[]))
         self.textField = None
         self.createUI()
         #TESTIB Tahe saatmist ja eemaldamist.
@@ -103,17 +102,9 @@ class Client():
 
         #print(content)
 
-        if(self.textField != None):
-            try:
-                self.textField.delete(0,Tkinter.END)
-            except:
-                pass
-            self.textField.insert(0,content)
-
-
-        self.queue.put((self._synchronise, []))
+    #    self.queue.put((self._synchronise, [args[0]]))
         #logging.info("Server has" + content)
-        return
+        return content
 
     def addColaborator(self,name,password):
         self.server.file.addCollaborator(name,password)
@@ -203,7 +194,8 @@ class Client():
                 except soc_err:
                     break
 
-            time.sleep(0.001)
+            time.sleep(0.01)
+        logging.info("Ending client sender loop...")
 
 if __name__ == '__main__':
     c = Client()

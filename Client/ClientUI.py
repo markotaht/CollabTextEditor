@@ -1,15 +1,18 @@
 from Tkinter import *
-from threading import Thread
+from threading import Thread, Lock
 from Commons import DEFAULT_PORT
 from Util import differenceBetween
 
 class ClientUI(Frame,Thread):
     def __init__(self, client):
         Thread.__init__(self)
+        self.lock = Lock()
         self.client = client
         self.content = Tk()
         self.initUI()
         self.oldText = ""
+        self.textField = None
+        self.sync = ""
 
     def run(self):
         self.content.mainloop()
@@ -25,11 +28,11 @@ class ClientUI(Frame,Thread):
         disconnectButton = Button(top, text="Disconnect")
         disconnectButton.grid(row=0, column=0, padx=padx, pady=pady)
 
-        global textField
-        textField = Text(top)
-        textField.grid(row=1, column=0, padx=padx, pady=pady)
-        textField.bind('<<Modified>>', self.changed)
-        textField.focus_set()
+        self.textField = Text(top)
+        self.textField.grid(row=1, column=0, padx=padx, pady=pady)
+        self.bindid = self.textField.bind('<Key>', self.changed)
+        self.textField.after(100,self.updateText)
+        self.textField.focus_set()
 
         connectedcollabsFrame = LabelFrame(top, text="Currently connected collabs")
         connectedcollabsFrame.grid(row=1, column=1, padx=padx, pady=padx)
@@ -190,16 +193,28 @@ class ClientUI(Frame,Thread):
 
     #Sends local changes to be processed by client
     def changed(self, event):
-        flag = textField.edit_modified()
-        if flag:  # prevent from getting called twice
-            print "Text changed locally"
-            newText = textField.get("0.0", 'end-1c')
-            #print "Old Text: ", self.oldText
+    #    flag = self.textField.edit_modified()
+        try:
+            if ord(event.char) == 8:
+                kursor = self.textField.index(INSERT)
+                text = self.textField.get("0.0", kursor)
+                self.client.removeLetter(len(text) - 1);
+            else:
+                kursor = self.textField.index(INSERT)
+                text = self.textField.get("0.0", kursor)
+                self.client.sendLetter(event.char,len(text))
+        except TypeError:
+            print "noole klahv"
+       # if flag:  # prevent from getting called twice
+                #self.client.removeLetter()
+        #    print "Text changed locally"
+        #    newText = self.textField.get("0.0", 'end-1c')
+            #print "Old Text: ", self.oldTexte
             #print "New Text: ", newText
-            index = differenceBetween(newText, self.oldText)
-            self.client.processLocalChange(textField, self.oldText, newText, index[0], index[1], index[2])
-            self.oldText = newText
-        textField.edit_modified(False)
+        #    index = differenceBetween(newText, self.oldText)
+        #    self.client.processLocalChange(self.textField, self.oldText, newText, index[0], index[1], index[2])
+        #    self.oldText = newText
+      #  self.textField.edit_modified(False)
 
     #Mina kui host
     def fileedit(self):
@@ -225,14 +240,13 @@ class ClientUI(Frame,Thread):
         manageCollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.manageCollaborators)
         manageCollaboratorsButton.grid(row=0, column=2, padx=padx, pady=pady)
 
+        self.textField = Text(top)
+        self.textField.grid(row=1, column=0, padx=padx, pady=pady)
+        self.textField.bind('<Key>', self.changed)
+        self.textField.after(100,self.updateText)
+        self.textField.focus_set()
 
-        global textField
-        textField = Text(top)
-        textField.grid(row=1, column=0, padx=padx, pady=pady)
-        textField.bind('<<Modified>>', self.changed)
-        textField.focus_set()
-
-        self.client.textField = textField
+        self.client.textField = self.textField
 
         buttons = LabelFrame(top, text="Currently connected collabs")
         buttons.grid(row=1, column=2, padx=padx, pady=padx)
@@ -240,6 +254,23 @@ class ClientUI(Frame,Thread):
         listbox = Listbox(buttons)
         listbox.grid(row=0, column=0, padx=padx, pady=pady)
         listbox.insert(END, "Antonio")
+
+    def ignore(self,event):
+        return "break"
+
+    def updateText(self):
+        content = self.client._synchronise([])
+        if (self.textField != None) and self.sync != content:
+            self.sync = content
+            try:
+                self.textField.delete("1.0", END)
+            except:
+                pass
+            self.textField.insert("1.0", content)
+        self.textField.after(100,self.updateText)
+
+    def getText(self):
+        return self.sync
 
     def initUI(self):
 
