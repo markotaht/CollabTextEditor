@@ -76,7 +76,6 @@ class ClientUI(Frame,Thread):
         ipEntry.grid(row=2, column=1, padx=padx, pady=pady)
 
         def callback(window):
-            #TODO check and connect
             print usernameEntry.get()
             print passwordEntry.get()
             print ipEntry.get()
@@ -129,6 +128,7 @@ class ClientUI(Frame,Thread):
         self.updatemanagecollaborators() #update managecollaborators
         self.updateallcollaborators() #updates all collaborators (in main text edit window)
 
+
     def editCollaboratorsDialog(self, isAddingNew):
         padx = 2
         pady = 2
@@ -156,14 +156,15 @@ class ClientUI(Frame,Thread):
         doneButton.grid(row=2, column=1, padx=padx, pady=pady)
 
 
-
-        # TODO crashes when list is empty
-        #workaround - check if there is something selected
+        #Make sure something is selected
+        #otherwise close edit window
         if listbox.get(ANCHOR)!= "":
             un = listbox.get(ANCHOR).split("-")
             print "Editing", un
             usernameEntry.insert(0, un[0])
             passwordEntry.insert(0, un[1])
+        else:
+            top.destroy()
 
 
     def updatemanagecollaborators(self):
@@ -207,9 +208,10 @@ class ClientUI(Frame,Thread):
         removeButton = Button(buttons, text="remove", command= self.deleteCollaborator)
         removeButton.grid(row=0, column=2, padx=padx, pady=pady)
 
-    def closeClient(self):
+    def closeClient(self, root):
+        root.destroy()
         self.client.close()
-        #TODO close ui
+        #TODO client is not closed correctly
 
     def left(self,event):
         self.client.moveCaret(-1)
@@ -222,7 +224,7 @@ class ClientUI(Frame,Thread):
     #    flag = self.textField.edit_modified()
         try:
             if ord(event.char) == 8:
-                self.client.removeLetter();
+                self.client.removeLetter()
             else:
                 self.client.sendLetter(event.char)
         except TypeError:
@@ -247,7 +249,6 @@ class ClientUI(Frame,Thread):
     def fileedit(self):
         self.client.openLocally()
         #TODO add something to make differ between new file and edit file
-        #TODO get text from server
         padx = 2
         pady = 2
 
@@ -261,7 +262,7 @@ class ClientUI(Frame,Thread):
         closeallButton = Button(buttons, text="Close all")
         closeallButton.grid(row=0, column=0, padx=padx, pady=pady)
 
-        closeclientButton = Button(buttons, text="Close client", command = self.closeClient)
+        closeclientButton = Button(buttons, text="Close client", command = lambda: self.closeClient(top))
         closeclientButton.grid(row=0, column=1, padx=padx, pady=pady)
 
         manageCollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.manageCollaborators)
@@ -311,7 +312,7 @@ class ClientUI(Frame,Thread):
             self.textField.insert("1.0", content)
             self.textField.mark_set("insert","1.0+%d chars" % caret)
             self.caretpos = caret
-        self.textField.after(100,self.updateText)
+        self.textField.after(100, self.updateText)
 
     def getText(self):
         return self.sync
