@@ -13,6 +13,7 @@ class ClientUI(Frame,Thread):
         self.oldText = ""
         self.textField = None
         self.sync = ""
+        self.caretpos = 0
 
     def run(self):
         self.content.mainloop()
@@ -219,6 +220,11 @@ class ClientUI(Frame,Thread):
         #    self.oldText = newText
       #  self.textField.edit_modified(False)
 
+    def restorecaret(self, event):
+        #moves caret to server's position. Used with up and down key and mouse1
+        print "ingore and move caret to server position"
+        self.textField.mark_set(INSERT, "1.0+%d chars" % self.caretpos)
+
     #Mina kui host
     def fileedit(self):
         self.client.openLocally()
@@ -248,6 +254,11 @@ class ClientUI(Frame,Thread):
         self.textField.bind('<Key>', self.changed)
         self.textField.bind('<Left>',self.left)
         self.textField.bind('<Right>', self.right)
+
+        #ignore up, down and mouse button clicks -> move caret to previous position
+        self.textField.bind('<KeyRelease-Up>', self.restorecaret)
+        self.textField.bind('<KeyRelease-Down>', self.restorecaret)
+        self.textField.bind('<ButtonRelease-1>', self.restorecaret)
         self.textField.after(100,self.updateText)
         self.textField.focus_set()
 
@@ -264,6 +275,9 @@ class ClientUI(Frame,Thread):
         return "break"
 
     def updateText(self):
+        #updates textfield with text from server
+        #sets caret pos to what it is in the server
+        #updates self.caretpos to servers value - used with up and down arrow events
         content,caret = self.client._synchronise([])
         if (self.textField != None) and self.sync != content:
             self.sync = content
@@ -273,6 +287,7 @@ class ClientUI(Frame,Thread):
                 pass
             self.textField.insert("1.0", content)
             self.textField.mark_set("insert","1.0+%d chars" % caret)
+            self.caretpos = caret
         self.textField.after(100,self.updateText)
 
     def getText(self):
