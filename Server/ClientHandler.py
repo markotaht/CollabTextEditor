@@ -18,6 +18,7 @@ class ClientHandler(Thread):
         self.client_socket = client_socket
         self.client_addr = client_addr
         self.file = file
+        self.clientname = None
         self.lock = Lock()
 
     def run(self):
@@ -66,31 +67,30 @@ class ClientHandler(Thread):
         if action != REQ_SYNCHRONIZE:
             #Prevent spam from synchronization
             logging.info("Server received " + action + ":" + data)
-
-        if action == REQ_MODIFICATION:
-            id = self.file.requestModification()
-            if not id:
-                return RSP_MODIFICATION_NOTOK + MSG_FIELD_SEP
-            return RSP_MODIFICATION_OK + MSG_FIELD_SEP + str(id)
+        if action == REQ_MOVE_CARET:
+            if self.file.moveCaret(self.clientname,int(data)):
+                return RSP_MOVE_CARET_OK
+            return RSP_MOVE_CARET_NOTOK
         elif action == REQ_REMOVE_LETTER:
             logging.info("Attempting to remove a letter")
-            if self.file.removeLetter(data):
+            if self.file.removeLetter(self.clientname):
                 logging.info("Letter removed successfully")
                 return RSP_REMOVE_LETTER_OK
             return RSP_REMOVE_LETTER_NOTOK
         elif action == REQ_SEND_LETTER:
             logging.info("Attempting to add a letter")
-            if self.file.addLetter(data):
+            if self.file.addLetter(data,self.clientname):
                 logging.info("Letter added successfully")
                 return RSP_SEND_LETTER_OK
             return RSP_SEND_LETTER_NOTOK
         elif action == REQ_SYNCHRONIZE:
-            changes = self.file.getChanges()
-            data = serialize(changes)
+            changes,caret = self.file.getContent(self.clientname)
+            data = serialize(changes+":"+str(caret))
             return RSP_SYNCHRONIZE_OK + MSG_FIELD_SEP + data
         elif action == INTRODUCTION:
             name,password = data.split(":")
             if self.file.checkCollaborator(name,password):
+                self.clientname = name
                 return RSP_INTRODUCTION_OK
             return RSP_INTRODUCTION_NOTOK
         else:

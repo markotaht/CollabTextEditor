@@ -19,11 +19,11 @@ class TextFile(Thread):
         self.setName("SERVER-FILE")
         self.content = ""
         self.collaborators = defaultdict(str)
+        self.carets = defaultdict(int)
         self.queue = defaultdict(lambda:defaultdict(str))
         self.done = False
         self.lock = Lock()
         self.idCounter = 0;
-        self.lukk = False
 
     def openfile(self, name):
         if os.path.isfile(name + "_content.txt"):
@@ -49,13 +49,16 @@ class TextFile(Thread):
         collabs.close()
 
     def addCollaborator(self,name,password):
-        self.collaborators[name] = password
+        with self.lock:
+            self.collaborators[name] = password
 
     def checkCollaborator(self,name,password):
-        if name in self.collaborators and self.collaborators[name] == password:
-            LOG.info(name + " joined the server")
-            return True
-        return False
+        with self.lock:
+            if name in self.collaborators and self.collaborators[name] == password:
+                LOG.info(name + " joined the server")
+                self.carets["name"] = 0
+                return True
+            return False
 
     def end(self):
         self.done = True
@@ -63,81 +66,62 @@ class TextFile(Thread):
     def run(self):
         while 1:
             if not self.queue.keys():
-                if self.done:
-                    break
                 continue
+            if self.done:
+                break
             self.checkEvents()
         self.savefile()
 
+    def move_caret(self,name, index, movement):
+        for i in self.carets:
+            if i == name:
+                self.carets[i] += movement
+            elif self.carets[i] >= index:
+                self.carets[i] += movement
 
     def applyEvent(self,id):
         if self.queue[id]["modification"] == "ADD_LETTER":
             LOG.info("Adding a letter")
-            carIndex = int(self.queue[id]["index"])
+            carIndex = self.carets[self.queue[id]["name"]]
             self.content = self.content[:carIndex] + self.queue[id]["char"] + self.content[carIndex:]
+            self.move_caret(self.queue[id]["name"],carIndex,1)
         elif self.queue[id]["modification"] == "REMOVE_LETTER":
-            carIndex = int(self.queue[id]["index"])
+            carIndex =  self.carets[self.queue[id]["name"]]
             LOG.info("Removing a letter")
             self.content = self.content[:carIndex]+ self.content[carIndex+1:]
-        self.lukk = False
+            self.move_caret(self.queue[id]["name"], carIndex, -1)
         return
 
     def checkEvents(self):
         events = self.queue.keys()
         events.sort()
         for i in events:
-            if self.queue[i]["done"]:
-                self.applyEvent(i)
-                self.queue.pop(i,None)
-                #Merge vms siin
-            else:
-                if time() - int(self.queue[i]["time"]) >= 1000:
-                    self.queue.pop(i,None)
-                return
+            self.applyEvent(i)
+            self.queue.pop(i,None)
 
 
-    def addLetter(self,data):
-        parts = data.split(":")
-        ID = parts[0]
-        index = parts[1]
-        char = parts[2]
-        if not ID in self.queue:
-            return False
-        self.queue[ID]["index"] = index
-        self.queue[ID]["char"] = char
+    def addLetter(self,data,name):
+        ID = "ID" + str(self.idCounter)
+        self.idCounter += 1
+        self.queue[ID]["char"] = data
         self.queue[ID]["modification"] = "ADD_LETTER"
-        self.queue[ID]["done"] = True
+        self.queue[ID]["name"] = name
         return True
 
-    def removeLetter(self,data):
-        parts = data.split(":")
-        ID = parts[0]
-        index = parts[1]
-        if not ID in self.queue:
-            return False
-        self.queue[ID]["index"] = index
+    def removeLetter(self,name):
+        ID = "ID" + str(self.idCounter)
+        self.idCounter += 1
         self.queue[ID]["modification"] = "REMOVE_LETTER"
-        self.queue[ID]["done"] = True
+        self.queue[ID]["name"] = name
         return True
 
-    def requestModification(self):
+    def moveCaret(self,name,movement):
+        print name
+        print self.carets[name]
         with self.lock:
-            if self.lukk:
-                return False
-            ID = "ID" + str(self.idCounter)
-            self.idCounter += 1
-            self.lukk = True
-            self.queue[ID]["done"] = False
-            self.queue[ID]["before"] = self.content
-            self.queue[ID]["time"] = str(int(time()))
-            return ID
+            if self.carets[name] <= len(self.content) and self.carets[name] >= 0:
+                self.carets[name] += movement
+        print self.carets[name]
 
-    def getChanges(self):
-        return self.content
-
-    def getContent(self):
-        with self.lock:
-            data = ""
-            for i in self.content:
-                data += i[1]
-            return data
+    def getContent(self,name):
+        return self.content, self.carets[name]

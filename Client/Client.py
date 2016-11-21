@@ -20,8 +20,6 @@ class Client():
         self.file = ""
         self.socket = None
         self.server = None
-        self.queue = Queue()
-        self.textField = None
         self.createUI()
         #TESTIB Tahe saatmist ja eemaldamist.
     #    self.connect(('192.168.56.1',7777))
@@ -36,8 +34,6 @@ class Client():
             if self.sendIntroduction(name,password) == RSP_INTRODUCTION_NOTOK:
                 self.socket.close()
                 return False
-            self.loop()
-
             return True
         except soc_err as e:
             logging.error('Can not connect to the server at %s:%d' \
@@ -50,11 +46,6 @@ class Client():
         req = INTRODUCTION+MSG_FIELD_SEP+data
         return self.send(req)
 
-    def requestModification(self):
-        req = REQ_MODIFICATION + MSG_FIELD_SEP
-        rsp = self.send(req)
-        return rsp.split(":")
-
     def processLocalChange(self, textField, oldVersion, newVersion, changeType, changeIndex, changeChar):
         print(oldVersion + " -> " + newVersion)
         print(changeType + "" + changeChar + " at " + str(changeIndex))
@@ -65,32 +56,19 @@ class Client():
             self.removeLetter(changeIndex)
 
 
-    def sendLetter(self, letter, index):
-        logging.info("Sending letter: " + letter + " index " + str(index))
-        args = [letter,index]
-        self.queue.put((self._sendLetter, args))
-
-    def _sendLetter(self,args):
-        code,ID = self.requestModification()
-        if code == RSP_MODIFICATION_NOTOK:
-            return
-        data = ID + ":" + str(args[1]) + ":" +args[0]
-        data = serialize(data)
+    def sendLetter(self, letter):
+        logging.info("Sending letter: " + letter)
+        data = serialize(letter)
         req = REQ_SEND_LETTER + MSG_FIELD_SEP + data
-        logging.info("\"Add letter\" change with changeID " + ID + " sent.")
         return self.send(req)
 
-    def removeLetter(self, index):
-        logging.info("Remove letter from index: " + str(index))
-        args = [index]
-        self.queue.put((self._removeLetter, args))
+    def removeLetter(self):
+        req = REQ_REMOVE_LETTER + MSG_FIELD_SEP
+        return self.send(req)
 
-    def _removeLetter(self,args):
-        code, ID = self.requestModification()
-        if code == RSP_MODIFICATION_NOTOK:
-            return
-        data = serialize(ID +":"+str(args[0]))
-        req = REQ_REMOVE_LETTER + MSG_FIELD_SEP + data
+    def moveCaret(self,movement):
+        data = serialize(str(movement))
+        req = REQ_MOVE_CARET + MSG_FIELD_SEP + data
         return self.send(req)
 
     def _synchronise(self,args):
@@ -99,14 +77,14 @@ class Client():
         req = REQ_SYNCHRONIZE + MSG_FIELD_SEP
         data = self.send(req)
         content = deserialize(data[3:])
+        content,caret = content.split(":")
 
-        #print(content)
-
-    #    self.queue.put((self._synchronise, [args[0]]))
-        #logging.info("Server has" + content)
-        return content
+        return content,int(caret)
 
     def addColaborator(self,name,password):
+        self.server.file.addCollaborator(name,password)
+
+    def addCollaborator(self,name,password):
         self.server.file.addCollaborator(name,password)
 
     def openLocally(self):
@@ -116,6 +94,7 @@ class Client():
         time.sleep(0.01)
         self.connect(("127.0.0.1", 7777),"me","admin")
         logging.info("Connected to server.")
+        self.addCollaborator("test","1234")
 
     def send(self,msg):
         m = msg + MSG_SEP
@@ -174,28 +153,6 @@ class Client():
     def createUI(self):
         self.ui = ClientUI.ClientUI(self)
         self.ui.start();
-
-    def loop(self):
-        sendThread = Thread(target=self._sendLoop, args=(self,))
-        sendThread.setName("CLIENT-SEND-LOOP")
-        sendThread.start()
-
-        return
-
-    def _sendLoop(self, parent):
-        logging.info("Starting client sender loop...")
-        while 1:
-            while not parent.queue.empty():
-                event = parent.queue.get()
-                try:
-                    if event == None:
-                        break
-                    event[0](event[1])
-                except soc_err:
-                    break
-
-            time.sleep(0.01)
-        logging.info("Ending client sender loop...")
 
 if __name__ == '__main__':
     c = Client()

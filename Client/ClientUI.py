@@ -30,7 +30,9 @@ class ClientUI(Frame,Thread):
 
         self.textField = Text(top)
         self.textField.grid(row=1, column=0, padx=padx, pady=pady)
-        self.bindid = self.textField.bind('<Key>', self.changed)
+        self.textField.bind('<Key>', self.changed)
+        self.textField.bind('<Left>',self.left)
+        self.textField.bind('<Right>', self.right)
         self.textField.after(100,self.updateText)
         self.textField.focus_set()
 
@@ -190,19 +192,20 @@ class ClientUI(Frame,Thread):
         self.client.close()
         #TODO close ui
 
+    def left(self,event):
+        self.client.moveCaret(-1)
+
+    def right(self,event):
+        self.client.moveCaret(1)
 
     #Sends local changes to be processed by client
     def changed(self, event):
     #    flag = self.textField.edit_modified()
         try:
             if ord(event.char) == 8:
-                kursor = self.textField.index(INSERT)
-                text = self.textField.get("0.0", kursor)
-                self.client.removeLetter(len(text) - 1);
+                self.client.removeLetter();
             else:
-                kursor = self.textField.index(INSERT)
-                text = self.textField.get("0.0", kursor)
-                self.client.sendLetter(event.char,len(text))
+                self.client.sendLetter(event.char)
         except TypeError:
             print "noole klahv"
        # if flag:  # prevent from getting called twice
@@ -243,6 +246,8 @@ class ClientUI(Frame,Thread):
         self.textField = Text(top)
         self.textField.grid(row=1, column=0, padx=padx, pady=pady)
         self.textField.bind('<Key>', self.changed)
+        self.textField.bind('<Left>',self.left)
+        self.textField.bind('<Right>', self.right)
         self.textField.after(100,self.updateText)
         self.textField.focus_set()
 
@@ -259,7 +264,7 @@ class ClientUI(Frame,Thread):
         return "break"
 
     def updateText(self):
-        content = self.client._synchronise([])
+        content,caret = self.client._synchronise([])
         if (self.textField != None) and self.sync != content:
             self.sync = content
             try:
@@ -267,6 +272,7 @@ class ClientUI(Frame,Thread):
             except:
                 pass
             self.textField.insert("1.0", content)
+            self.textField.mark_set("insert","1.0+%d chars" % caret)
         self.textField.after(100,self.updateText)
 
     def getText(self):
