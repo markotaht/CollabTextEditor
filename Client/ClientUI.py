@@ -18,15 +18,23 @@ class ClientUI(Frame,Thread):
     def run(self):
         self.content.mainloop()
 
+    def closeClient(self):
+        print "safe close"
+        self.content.destroy()
+        self.client.close()
+        #TODO client is not closed correctly
+
     #Editing a remote file
     def remoteFile(self):
+        #TODO Text only appers when one letter is typed
+
         padx = 2
         pady = 2
 
         top = Toplevel()
         top.title("Remote file + filename")
 
-        disconnectButton = Button(top, text="Disconnect")
+        disconnectButton = Button(top, text="Disconnect",command = lambda: self.closeClient(top))
         disconnectButton.grid(row=0, column=0, padx=padx, pady=pady)
 
         self.textField = Text(top)
@@ -34,6 +42,12 @@ class ClientUI(Frame,Thread):
         self.textField.bind('<Key>', self.changed)
         self.textField.bind('<Left>',self.left)
         self.textField.bind('<Right>', self.right)
+
+        #ignore and move caret to previous position
+        self.textField.bind('<KeyRelease-Up>', self.restorecaret)
+        self.textField.bind('<KeyRelease-Down>', self.restorecaret)
+        self.textField.bind('<KeyRelease-Home>', self.restorecaret)
+        self.textField.bind('<ButtonRelease-1>', self.restorecaret)
         self.textField.after(100,self.updateText)
         self.textField.focus_set()
 
@@ -42,8 +56,9 @@ class ClientUI(Frame,Thread):
 
         listbox = Listbox(connectedcollabsFrame)
         listbox.grid(row=0, column=0, padx=padx, pady=pady)
-        #listbox.insert(END, "Antonio")
 
+        # handles close from 'X'
+        top.protocol('WM_DELETE_WINDOW', self.closeClient)
 
     def connectDialog(self):
 
@@ -92,7 +107,7 @@ class ClientUI(Frame,Thread):
                 #Ip and port both specified
                 ip,port = ipEntry.get().split(":")
 
-            if self.client.connect((ip,int(port)),usernameEntry.get(),passwordEntry.get()):
+            if self.client.connect((ip, int(port)), usernameEntry.get(), passwordEntry.get()):
                 window.destroy()
                 self.remoteFile()
             else:
@@ -208,10 +223,6 @@ class ClientUI(Frame,Thread):
         removeButton = Button(buttons, text="remove", command= self.deleteCollaborator)
         removeButton.grid(row=0, column=2, padx=padx, pady=pady)
 
-    def closeClient(self, root):
-        root.destroy()
-        self.client.close()
-        #TODO client is not closed correctly
 
     def left(self,event):
         self.client.moveCaret(-1)
@@ -259,10 +270,8 @@ class ClientUI(Frame,Thread):
         buttons.grid(row=0, column=0, padx=padx, pady=pady)
 
 
-        closeallButton = Button(buttons, text="Close all")
-        closeallButton.grid(row=0, column=0, padx=padx, pady=pady)
 
-        closeclientButton = Button(buttons, text="Close client", command = lambda: self.closeClient(top))
+        closeclientButton = Button(buttons, text="Close", command = lambda: self.closeClient(top))
         closeclientButton.grid(row=0, column=1, padx=padx, pady=pady)
 
         manageCollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.manageCollaborators)
@@ -294,6 +303,9 @@ class ClientUI(Frame,Thread):
 
         #TODO update when someone connects
         self.updateallcollaborators()
+
+        #handles close from 'X'
+        top.protocol('WM_DELETE_WINDOW', self.closeClient)
 
     def ignore(self,event):
         return "break"
