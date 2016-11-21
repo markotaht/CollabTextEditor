@@ -60,6 +60,18 @@ class TextFile(Thread):
                 return True
             return False
 
+    def getCollaborators(self):
+        return self.collaborators
+
+    def removeCollaborator(self, name):
+        with self.lock:
+            self.collaborators.pop(name)
+
+    def editCollaborator(self, oldname, newname, password):
+        with self.lock:
+            self.collaborators.pop(oldname)
+        self.addCollaborator(newname, password)
+
     def end(self):
         self.done = True
 

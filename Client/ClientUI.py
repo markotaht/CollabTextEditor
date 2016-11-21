@@ -103,19 +103,31 @@ class ClientUI(Frame,Thread):
         connectButton.pack(side="bottom", padx=padx, pady=pady)
         connectButton.grid(row=3, column=1)
 
-    #updates the collaborator list
-    def updateCollaboratorsList(self, un, pw, addnew, window):
 
+    def updateCollaboratorsList(self, un, pw, addnew, window):
+        # updates the collaborator list in manage collaborators
         if addnew:
             print "added", un, pw
-            listbox.insert(END, un + "    " + pw)
+            self.client.addCollaborator(un, pw)
+            self.updatemanagecollaborators()
+            self.updateallcollaborators()
             window.destroy()
 
+
         else:
-            print "edited", listbox.get(ANCHOR) + "to", un, pw
-            listbox.delete(ANCHOR)
-            listbox.insert(END, un+"    "+pw)
+            print "edited", listbox.get(ANCHOR) +" " + "to", un, pw
+            self.client.editCollaborator(listbox.get(ANCHOR).split("-")[0], un, pw)
+            self.updatemanagecollaborators()
+            self.updateallcollaborators()
             window.destroy()
+
+    def deleteCollaborator(self):
+        #Deletes a collaborator from server
+        un = listbox.get(ANCHOR)
+        print "delete collaborator", un
+        self.client.removeCollaborator(listbox.get(ANCHOR).split("-")[0])
+        self.updatemanagecollaborators() #update managecollaborators
+        self.updateallcollaborators() #updates all collaborators (in main text edit window)
 
     def editCollaboratorsDialog(self, isAddingNew):
         padx = 2
@@ -148,17 +160,22 @@ class ClientUI(Frame,Thread):
         # TODO crashes when list is empty
         #workaround - check if there is something selected
         if listbox.get(ANCHOR)!= "":
-            un = listbox.get(ANCHOR).split("    ")
+            un = listbox.get(ANCHOR).split("-")
             print "Editing", un
             usernameEntry.insert(0, un[0])
             passwordEntry.insert(0, un[1])
 
 
-    def deleteCollaborator(self):
+    def updatemanagecollaborators(self):
+        #updates the collaborators list opened from "Manage collaborators"
+        listbox.delete(0, END)
+        for k, v in self.client.getCollaborators().iteritems():
+            listbox.insert(END, str(k)+"-"+str(v))
 
-        un = listbox.get(ANCHOR)
-        print "delete", un
-        listbox.delete(ANCHOR)
+    def updateallcollaborators(self):
+        collabbox.delete(0, END)
+        for k, v in self.client.getCollaborators().iteritems():
+            collabbox.insert(END, str(k))
 
     def manageCollaborators(self):
 
@@ -178,7 +195,8 @@ class ClientUI(Frame,Thread):
 
         listbox = Listbox(list)
         listbox.grid(row=2, column=0, padx=padx, pady=pady)
-        listbox.insert(END, "Antonio    password")
+        for k, v in self.client.getCollaborators().iteritems():
+            listbox.insert(END, str(k) + "-" + str(v))
 
         addButton = Button(buttons, text="add", command = lambda: self.editCollaboratorsDialog(True))
         addButton.grid(row=0, column=0, padx=padx, pady=pady)
@@ -255,9 +273,10 @@ class ClientUI(Frame,Thread):
         self.textField.bind('<Left>',self.left)
         self.textField.bind('<Right>', self.right)
 
-        #ignore up, down and mouse button clicks -> move caret to previous position
+        #ignore and move caret to previous position
         self.textField.bind('<KeyRelease-Up>', self.restorecaret)
         self.textField.bind('<KeyRelease-Down>', self.restorecaret)
+        self.textField.bind('<KeyRelease-Home>', self.restorecaret)
         self.textField.bind('<ButtonRelease-1>', self.restorecaret)
         self.textField.after(100,self.updateText)
         self.textField.focus_set()
@@ -267,9 +286,13 @@ class ClientUI(Frame,Thread):
         buttons = LabelFrame(top, text="Currently connected collabs")
         buttons.grid(row=1, column=2, padx=padx, pady=padx)
 
-        listbox = Listbox(buttons)
-        listbox.grid(row=0, column=0, padx=padx, pady=pady)
-        listbox.insert(END, "Antonio")
+        #create a listbox and populate it
+        global collabbox
+        collabbox = Listbox(buttons)
+        collabbox.grid(row=0, column=0, padx=padx, pady=pady)
+
+        #TODO update when someone connects
+        self.updateallcollaborators()
 
     def ignore(self,event):
         return "break"
@@ -308,3 +331,4 @@ class ClientUI(Frame,Thread):
         self.editelsefileButton.grid(row = 0, column = 1, padx = padx, pady = pady)
 
         return True
+

@@ -87,6 +87,15 @@ class Client():
     def addCollaborator(self,name,password):
         self.server.file.addCollaborator(name,password)
 
+    def getCollaborators(self):
+        return self.server.file.getCollaborators()
+
+    def removeCollaborator(self, name):
+        self.server.file.removeCollaborator(name)
+
+    def editCollaborator(self, oldname, newname, pw):
+        self.server.file.editCollaborator(oldname, newname, pw)
+
     def openLocally(self):
         #run server
         self.server = Server()
@@ -95,6 +104,8 @@ class Client():
         self.connect(("127.0.0.1", 7777),"me","admin")
         logging.info("Connected to server.")
         self.addCollaborator("test","1234")
+
+
 
     def send(self,msg):
         m = msg + MSG_SEP
