@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG, \
 LOG = logging.getLogger()
 
 from settings import PROJECT_ROOT
-FILES_DIR = PROJECT_ROOT + "/Files"
+FILES_DIR = PROJECT_ROOT + "/Files/"
 
 import os.path
 #TODO voimalik et vaja parandada threadide syncimist
@@ -27,11 +27,12 @@ class TextFile(Thread):
         self.connectedcollaborators = [""] #TODO remove if offline also
 
     def openfile(self, name):
-        if os.path.isfile(name + "_content.txt"):
-            file = open(name+"_content.txt")
+        if os.path.isfile(FILES_DIR + name + "_content.txt"):
+            file = open(FILES_DIR + name+"_content.txt")
             self.content = file.read()
             file.close()
-            collabs = open(name+"_collaborators.txt")
+        if os.path.isfile(FILES_DIR + name + "_content.txt"):
+            collabs = open(FILES_DIR + name+"_collaborators.txt")
             for line in collabs:
                 parts = line.strip().split(":")
                 self.collaborators[parts[0]] = parts[1]
@@ -39,12 +40,16 @@ class TextFile(Thread):
         self.name = name
         self.collaborators["me"] = "admin"
 
+    def removeOnline(self,name):
+        self.connectedcollaborators.remove(name)
+        LOG.info("%s went offline" % name)
+
     def savefile(self):
-        file = open(self.name + "_content.txt","w")
+        file = open(FILES_DIR + self.name + "_content.txt","w")
         file.write(self.content)
         file.close()
 
-        collabs = open(self.name+"_collaborators.txt")
+        collabs = open(FILES_DIR + self.name+"_collaborators.txt", "w")
         for k,v in self.collaborators.iteritems():
             collabs.write(k+":"+v+"\n")
         collabs.close()
@@ -52,6 +57,7 @@ class TextFile(Thread):
     def addCollaborator(self,name,password):
         with self.lock:
             self.collaborators[name] = password
+            self.savefile()
 
     def checkCollaborator(self,name,password):
         with self.lock:
@@ -83,6 +89,7 @@ class TextFile(Thread):
             if self.done:
                 break
             self.checkEvents()
+            self.savefile()
         self.savefile()
 
     def move_caret(self,name, index, movement):

@@ -12,62 +12,20 @@ class ClientUI(Frame,Thread):
         self.initUI()
         self.oldText = ""
         self.textField = None
+        self.collabbox = None
         self.sync = ""
         self.caretpos = 0
 
     def run(self):
         self.content.mainloop()
 
-    def closeClient(self):
+    def closeClient(self, host=False):
         print "safe close"
         self.content.destroy()
         self.client.close()
+        if host:
+            self.client.server.close()
         #TODO client is not closed correctly
-
-    def remoteupdatecollaborators(self):
-        pass
-    #Editing a remote file
-    def remoteFile(self):
-
-        padx = 2
-        pady = 2
-
-        top = Toplevel()
-        top.title("Remote file + filename")
-
-        disconnectButton = Button(top, text="Disconnect",command = lambda: self.closeClient(top))
-        disconnectButton.grid(row=0, column=0, padx=padx, pady=pady)
-
-        self.textField = Text(top)
-        self.textField.grid(row=1, column=0, padx=padx, pady=pady)
-        self.textField.bind('<Key>', self.changed)
-        self.textField.bind('<Left>',self.left)
-        self.textField.bind('<Right>', self.right)
-
-        #ignore and move caret to previous position
-        self.textField.bind('<KeyRelease-Up>', self.restorecaret)
-        self.textField.bind('<KeyRelease-Down>', self.restorecaret)
-        self.textField.bind('<KeyRelease-Home>', self.restorecaret)
-        self.textField.bind('<ButtonRelease-1>', self.restorecaret)
-        self.textField.after(100,self.updateText)
-        self.textField.focus_set()
-
-        connectedcollabsFrame = LabelFrame(top, text="Currently connected collabs")
-        connectedcollabsFrame.grid(row=1, column=1, padx=padx, pady=padx)
-
-        # create a listbox and populate it
-        global collabbox
-        collabbox = Listbox(connectedcollabsFrame)
-        collabbox.grid(row=0, column=0, padx=padx, pady=pady)
-
-        # TODO update when someone connects
-        self.remoteupdatecollaborators()
-
-        listbox = Listbox(connectedcollabsFrame)
-        listbox.grid(row=0, column=0, padx=padx, pady=pady)
-
-        # handles close from 'X'
-        top.protocol('WM_DELETE_WINDOW', self.closeClient)
 
     def connectDialog(self):
 
@@ -133,7 +91,7 @@ class ClientUI(Frame,Thread):
             print "added", un, pw
             self.client.addCollaborator(un, pw)
             self.updatemanagecollaborators()
-            self.updateallcollaborators()
+        #    self.updateOnlineCollaborators()
             window.destroy()
 
 
@@ -141,7 +99,7 @@ class ClientUI(Frame,Thread):
             print "edited", listbox.get(ANCHOR) +" " + "to", un, pw
             self.client.editCollaborator(listbox.get(ANCHOR).split("-")[0], un, pw)
             self.updatemanagecollaborators()
-            self.updateallcollaborators()
+        #    self.updateOnlineCollaborators()
             window.destroy()
 
     def deleteCollaborator(self):
@@ -150,10 +108,11 @@ class ClientUI(Frame,Thread):
         print "delete collaborator", un
         self.client.removeCollaborator(listbox.get(ANCHOR).split("-")[0])
         self.updatemanagecollaborators() #update managecollaborators
-        self.updateallcollaborators() #updates all collaborators (in main text edit window)
+     #   self.updateOnlineCollaborators() #updates all collaborators (in main text edit window)
 
 
     def editCollaboratorsDialog(self, isAddingNew):
+        print "Siin"
         padx = 2
         pady = 2
 
@@ -197,13 +156,13 @@ class ClientUI(Frame,Thread):
         for k, v in self.client.getCollaborators().iteritems():
             listbox.insert(END, str(k)+"-"+str(v))
 
-    def updateallcollaborators(self, online):
+    def updateOnlineCollaborators(self, online):
         online = online.split(",")
         try:
-            collabbox.delete(0, END)
-            for k, v in self.client.getCollaborators().iteritems():
-                if str(k) in online:
-                    collabbox.insert(END, str(k))
+            self.collabbox.delete(0, END)
+            for k in online:
+                if len(k) != 0:
+                    self.collabbox.insert(END, str(k))
         except AttributeError:
             pass#TODO here with remote text file
 
@@ -254,21 +213,43 @@ class ClientUI(Frame,Thread):
                 self.client.sendLetter(event.char)
         except TypeError:
             print "noole klahv"
-       # if flag:  # prevent from getting called twice
-                #self.client.removeLetter()
-        #    print "Text changed locally"
-        #    newText = self.textField.get("0.0", 'end-1c')
-            #print "Old Text: ", self.oldTexte
-            #print "New Text: ", newText
-        #    index = differenceBetween(newText, self.oldText)
-        #    self.client.processLocalChange(self.textField, self.oldText, newText, index[0], index[1], index[2])
-        #    self.oldText = newText
-      #  self.textField.edit_modified(False)
 
     def restorecaret(self, event):
         #moves caret to server's position. Used with up and down key and mouse1
         print "ingore and move caret to server position"
         self.textField.mark_set(INSERT, "1.0+%d chars" % self.caretpos)
+
+    def common(self, top):
+        padx = 2
+        pady = 2
+        self.textField = Text(top)
+        self.textField.grid(row=1, column=0, padx=padx, pady=pady)
+        self.textField.bind('<Key>', self.changed)
+        self.textField.bind('<Left>', self.left)
+        self.textField.bind('<Right>', self.right)
+
+        # ignore and move caret to previous position
+        self.textField.bind('<KeyRelease-Up>', self.restorecaret)
+        self.textField.bind('<KeyRelease-Down>', self.restorecaret)
+        self.textField.bind('<KeyRelease-Home>', self.restorecaret)
+        self.textField.bind('<ButtonRelease-1>', self.restorecaret)
+        self.textField.after(100, self.updateText)
+        self.textField.focus_set()
+
+        self.client.textField = self.textField
+
+        buttons = LabelFrame(top, text="Currently connected collabs")
+        buttons.grid(row=1, column=2, padx=padx, pady=padx)
+
+        # create a listbox and populate it
+        self.collabbox = Listbox(buttons)
+        self.collabbox.grid(row=0, column=0, padx=padx, pady=pady)
+
+        # TODO update when someone connects
+        self.updateOnlineCollaborators("")
+
+        # handles close from 'X'
+        top.protocol('WM_DELETE_WINDOW', self.closeClient)
 
     #Mina kui host
     def fileedit(self):
@@ -283,43 +264,25 @@ class ClientUI(Frame,Thread):
         buttons = LabelFrame(top)
         buttons.grid(row=0, column=0, padx=padx, pady=pady)
 
-
-
-        closeclientButton = Button(buttons, text="Close", command = lambda: self.closeClient(top))
+        closeclientButton = Button(buttons, text="Close", command =lambda: self.closeClient(True))
         closeclientButton.grid(row=0, column=1, padx=padx, pady=pady)
 
         manageCollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.manageCollaborators)
         manageCollaboratorsButton.grid(row=0, column=2, padx=padx, pady=pady)
+        self.common(top)
 
-        self.textField = Text(top)
-        self.textField.grid(row=1, column=0, padx=padx, pady=pady)
-        self.textField.bind('<Key>', self.changed)
-        self.textField.bind('<Left>',self.left)
-        self.textField.bind('<Right>', self.right)
+    # Editing a remote file
+    def remoteFile(self):
+        padx = 2
+        pady = 2
 
-        #ignore and move caret to previous position
-        self.textField.bind('<KeyRelease-Up>', self.restorecaret)
-        self.textField.bind('<KeyRelease-Down>', self.restorecaret)
-        self.textField.bind('<KeyRelease-Home>', self.restorecaret)
-        self.textField.bind('<ButtonRelease-1>', self.restorecaret)
-        self.textField.after(100,self.updateText)
-        self.textField.focus_set()
+        top = Toplevel()
+        top.title("Remote file + filename")
 
-        self.client.textField = self.textField
+        disconnectButton = Button(top, text="Disconnect", command=self.closeClient)
+        disconnectButton.grid(row=0, column=0, padx=padx, pady=pady)
+        self.common(top)
 
-        buttons = LabelFrame(top, text="Currently connected collabs")
-        buttons.grid(row=1, column=2, padx=padx, pady=padx)
-
-        #create a listbox and populate it
-        global collabbox
-        collabbox = Listbox(buttons)
-        collabbox.grid(row=0, column=0, padx=padx, pady=pady)
-
-        #TODO update when someone connects
-        self.updateallcollaborators("")
-
-        #handles close from 'X'
-        top.protocol('WM_DELETE_WINDOW', self.closeClient)
 
     def ignore(self,event):
         return "break"
@@ -340,7 +303,7 @@ class ClientUI(Frame,Thread):
             self.caretpos = caret
 
         #mark people who are online
-        self.updateallcollaborators(online)
+        self.updateOnlineCollaborators(online)
         self.textField.after(100, self.updateText)
 
     def getText(self):

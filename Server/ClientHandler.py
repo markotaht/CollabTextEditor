@@ -43,11 +43,13 @@ class ClientHandler(Thread):
                 message += bits
             if len(bits) <= 0:
                 self.client_socket.close()
+                self.file.removeOnline(self.clientname)
                 LOG.info('Client %s:%d disconnected' % self.client_addr)
                 message = ''
             message = message[:-1]
         except KeyboardInterrupt:
             self.client_socket.close()
+            self.file.removeOnline(self.clientname)
             LOG.info('Ctrl+C issued, disconnecting client %s:%d' % self.client_addr)
             message = ''
         except soc_err as e:
@@ -57,6 +59,7 @@ class ClientHandler(Thread):
             else:
                 LOG.error('Error: %s' % str(e))
             self.client_socket.close()
+            self.file.removeOnline(self.clientname)
             LOG.info('Client %s:%d disconnected' % self.client_addr)
             message = ''
         return message

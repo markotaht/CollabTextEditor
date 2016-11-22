@@ -81,9 +81,6 @@ class Client():
 
         return content,int(caret),online
 
-    def addColaborator(self,name,password):
-        self.server.file.addCollaborator(name,password)
-
     def addCollaborator(self,name,password):
         self.server.file.addCollaborator(name,password)
 
@@ -159,7 +156,6 @@ class Client():
             self.socket.shutdown(SHUT_RD)
             self.socket.close()
             self.socket = None
-        self.queue.put(None)
 
     def createUI(self):
         self.ui = ClientUI.ClientUI(self)

@@ -15,6 +15,7 @@ class Server(Thread):
         self.file.openfile("Demo")
         self.file.start()
         self.clientHandlers = []
+        self.running = True
         self.server_addr = ("0.0.0.0", DEFAULT_PORT)
 
     def run(self):
@@ -32,14 +33,19 @@ class Server(Thread):
         logging.debug( 'Socket %s:%d is in listening state'\
                        '' % self.socket.getsockname())
 
+    def close(self):
+        self.running = False
+        self.file.end()
+        self.file.join()
 
     def loop(self):
         logging.info( 'Server loop started' )
         handlers = []
         try:
-            while 1:
+            while self.running:
                 client_socket = None
                 logging.info('Awaiting new clients ...')
+                #Server jaab siia kinni kui sulgeda. Kuidagi on vaja siit edais saada kui peaks sulgema...
                 client_socket, client_addr = self.socket.accept()
                 logging.info("Client joined from %s:%s"%client_addr)
                 c = ClientHandler.ClientHandler(self, client_socket, client_addr,self.file)
