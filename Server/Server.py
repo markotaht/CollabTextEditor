@@ -8,11 +8,11 @@ logging.basicConfig(level=logging.DEBUG,\
 
 class Server(Thread):
 
-    def __init__(self):
+    def __init__(self, filename):
         Thread.__init__(self)
         self.setName("SERVER")
         self.file = TextFile.TextFile()
-        self.file.openfile("Demo")
+        self.file.openfile(filename)
         self.file.start()
         self.clientHandlers = []
         self.running = True

@@ -25,7 +25,6 @@ class ClientUI(Frame,Thread):
         self.client.close()
         if host:
             self.client.closeServer()
-        #TODO client is not closed correctly
 
     def connectDialog(self):
 
@@ -247,21 +246,18 @@ class ClientUI(Frame,Thread):
         self.collabbox = Listbox(buttons)
         self.collabbox.grid(row=0, column=0, padx=padx, pady=pady)
 
-        # TODO update when someone connects
         self.updateOnlineCollaborators("")
 
-        # handles close from 'X'
-        top.protocol('WM_DELETE_WINDOW', self.closeClient)
 
     #Mina kui host
-    def fileedit(self):
-        self.client.openLocally()
-        #TODO add something to make differ between new file and edit file
+    def fileedit(self, filename):
+        self.client.openLocally(filename)
+
         padx = 2
         pady = 2
 
         top = Toplevel()
-        top.title("File name here")
+        top.title(filename)
 
         buttons = LabelFrame(top)
         buttons.grid(row=0, column=0, padx=padx, pady=pady)
@@ -271,6 +267,10 @@ class ClientUI(Frame,Thread):
 
         manageCollaboratorsButton = Button(buttons, text="Manage collaborators", command = self.manageCollaborators)
         manageCollaboratorsButton.grid(row=0, column=2, padx=padx, pady=pady)
+
+        # handles close from 'X'
+        top.protocol('WM_DELETE_WINDOW', lambda: self.closeClient(True))
+
         self.common(top)
 
     # Editing a remote file
@@ -279,10 +279,14 @@ class ClientUI(Frame,Thread):
         pady = 2
 
         top = Toplevel()
-        top.title("Remote file + filename")
+        top.title("Remote file")
 
         disconnectButton = Button(top, text="Disconnect", command=self.closeClient)
         disconnectButton.grid(row=0, column=0, padx=padx, pady=pady)
+
+        # handles close from 'X'
+        top.protocol('WM_DELETE_WINDOW', lambda: self.closeClient(False))
+
         self.common(top)
 
 
@@ -293,6 +297,7 @@ class ClientUI(Frame,Thread):
         #updates textfield with text from server
         #sets caret pos to what it is in the server
         #updates self.caretpos to servers value - used with up and down arrow events
+
         content,caret, online = self.client._synchronise([])
         if content == "CLOSE":
             self.closeClient()
@@ -315,18 +320,46 @@ class ClientUI(Frame,Thread):
     def getText(self):
         return self.sync
 
+    def filenamedialog(self):
+        #dialog after pressing "Local file"
+        #asks for filename, does not accept empty name
+
+        padx = 2
+        pady = 2
+
+        top = Toplevel()
+        top.title("Enter file name")
+
+        def callback():
+            filename = self.filenameentry.get()
+            if filename != "":
+                top.destroy()
+                self.fileedit(filename)
+
+        self.filenamelabel = Label(top, text="Enter file name (no extension):")
+        self.filenamelabel.grid(row=0, column=0, padx=padx, pady=pady)
+
+        self.filenameentry = Entry(top)
+        self.filenameentry.grid(row=1, column=0, padx=padx, pady=pady)
+
+        self.okbutton = Button(top, text = "Ok", command=callback)
+        self.okbutton.grid(row=2, column=0, padx=padx, pady=pady)
+
+        self.filenameentry.focus_set()
+
+
     def initUI(self):
 
         padx = 2
         pady = 2
 
-        self.newtextfileButton = Button(text = "New Text File", command = self.fileedit)
-        self.newtextfileButton.grid(row = 0, column = 0, padx = padx, pady = pady)
+        self.content.title("Googol Docs")
 
-        self.edityourfileButton = Button(text = "Edit your file", command = self.fileedit)
-        self.edityourfileButton.grid(row = 1, column = 0, padx = padx, pady = pady)
 
-        self.editelsefileButton = Button(text = "Edit outside file", command = self.connectDialog)
+        self.edityourfileButton = Button(text = "Local file", command = self.filenamedialog)
+        self.edityourfileButton.grid(row = 0, column = 0, padx = padx, pady = pady)
+
+        self.editelsefileButton = Button(text = "Remote file", command = self.connectDialog)
         self.editelsefileButton.grid(row = 0, column = 1, padx = padx, pady = pady)
 
         return True

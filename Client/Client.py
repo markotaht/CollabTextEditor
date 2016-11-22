@@ -98,9 +98,9 @@ class Client():
     def editCollaborator(self, oldname, newname, pw):
         self.server.file.editCollaborator(oldname, newname, pw)
 
-    def openLocally(self):
+    def openLocally(self, filename):
         #run server
-        self.server = Server()
+        self.server = Server(filename)
         self.server.start()
         time.sleep(0.01)
         self.connect(("127.0.0.1", 7777),"me","admin")
