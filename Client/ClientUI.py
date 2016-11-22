@@ -112,7 +112,6 @@ class ClientUI(Frame,Thread):
 
 
     def editCollaboratorsDialog(self, isAddingNew):
-        print "Siin"
         padx = 2
         pady = 2
 
@@ -141,11 +140,13 @@ class ClientUI(Frame,Thread):
 
         #Make sure something is selected
         #otherwise close edit window
-        if listbox.get(ANCHOR)!= "":
+        if listbox.get(ANCHOR)  != "" and not isAddingNew:
             un = listbox.get(ANCHOR).split("-")
             print "Editing", un
             usernameEntry.insert(0, un[0])
             passwordEntry.insert(0, un[1])
+        elif isAddingNew:
+            pass
         else:
             top.destroy()
 
@@ -205,10 +206,11 @@ class ClientUI(Frame,Thread):
 
     #Sends local changes to be processed by client
     def changed(self, event):
-    #    flag = self.textField.edit_modified()
         try:
             if ord(event.char) == 8:
                 self.client.removeLetter()
+            elif event.keysym == "Return":
+                self.client.sendLetter("\n")
             else:
                 self.client.sendLetter(event.char)
         except TypeError:
