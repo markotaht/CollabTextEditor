@@ -24,9 +24,10 @@ class ClientUI(Frame,Thread):
         self.client.close()
         #TODO client is not closed correctly
 
+    def remoteupdatecollaborators(self):
+        pass
     #Editing a remote file
     def remoteFile(self):
-        #TODO Text only appers when one letter is typed
 
         padx = 2
         pady = 2
@@ -53,6 +54,14 @@ class ClientUI(Frame,Thread):
 
         connectedcollabsFrame = LabelFrame(top, text="Currently connected collabs")
         connectedcollabsFrame.grid(row=1, column=1, padx=padx, pady=padx)
+
+        # create a listbox and populate it
+        global collabbox
+        collabbox = Listbox(connectedcollabsFrame)
+        collabbox.grid(row=0, column=0, padx=padx, pady=pady)
+
+        # TODO update when someone connects
+        self.remoteupdatecollaborators()
 
         listbox = Listbox(connectedcollabsFrame)
         listbox.grid(row=0, column=0, padx=padx, pady=pady)
@@ -188,10 +197,15 @@ class ClientUI(Frame,Thread):
         for k, v in self.client.getCollaborators().iteritems():
             listbox.insert(END, str(k)+"-"+str(v))
 
-    def updateallcollaborators(self):
-        collabbox.delete(0, END)
-        for k, v in self.client.getCollaborators().iteritems():
-            collabbox.insert(END, str(k))
+    def updateallcollaborators(self, online):
+        online = online.split(",")
+        try:
+            collabbox.delete(0, END)
+            for k, v in self.client.getCollaborators().iteritems():
+                if str(k) in online:
+                    collabbox.insert(END, str(k))
+        except AttributeError:
+            pass#TODO here with remote text file
 
     def manageCollaborators(self):
 
@@ -211,8 +225,8 @@ class ClientUI(Frame,Thread):
 
         listbox = Listbox(list)
         listbox.grid(row=2, column=0, padx=padx, pady=pady)
-        for k, v in self.client.getCollaborators().iteritems():
-            listbox.insert(END, str(k) + "-" + str(v))
+        self.updatemanagecollaborators()
+
 
         addButton = Button(buttons, text="add", command = lambda: self.editCollaboratorsDialog(True))
         addButton.grid(row=0, column=0, padx=padx, pady=pady)
@@ -302,7 +316,7 @@ class ClientUI(Frame,Thread):
         collabbox.grid(row=0, column=0, padx=padx, pady=pady)
 
         #TODO update when someone connects
-        self.updateallcollaborators()
+        self.updateallcollaborators("")
 
         #handles close from 'X'
         top.protocol('WM_DELETE_WINDOW', self.closeClient)
@@ -314,7 +328,7 @@ class ClientUI(Frame,Thread):
         #updates textfield with text from server
         #sets caret pos to what it is in the server
         #updates self.caretpos to servers value - used with up and down arrow events
-        content,caret = self.client._synchronise([])
+        content,caret, online = self.client._synchronise([])
         if (self.textField != None) and self.sync != content:
             self.sync = content
             try:
@@ -324,6 +338,9 @@ class ClientUI(Frame,Thread):
             self.textField.insert("1.0", content)
             self.textField.mark_set("insert","1.0+%d chars" % caret)
             self.caretpos = caret
+
+        #mark people who are online
+        self.updateallcollaborators(online)
         self.textField.after(100, self.updateText)
 
     def getText(self):

@@ -84,13 +84,14 @@ class ClientHandler(Thread):
                 return RSP_SEND_LETTER_OK
             return RSP_SEND_LETTER_NOTOK
         elif action == REQ_SYNCHRONIZE:
-            changes,caret = self.file.getContent(self.clientname)
-            data = serialize(changes+":"+str(caret))
+            changes,caret,online = self.file.getContent(self.clientname)
+            data = serialize(changes+":"+str(caret)+":"+online)
             return RSP_SYNCHRONIZE_OK + MSG_FIELD_SEP + data
         elif action == INTRODUCTION:
             name,password = data.split(":")
             if self.file.checkCollaborator(name,password):
                 self.clientname = name
+                self.file.connectedcollaborators.append(name)
                 return RSP_INTRODUCTION_OK
             return RSP_INTRODUCTION_NOTOK
         else:

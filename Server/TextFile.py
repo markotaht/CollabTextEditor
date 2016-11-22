@@ -23,7 +23,8 @@ class TextFile(Thread):
         self.queue = defaultdict(lambda:defaultdict(str))
         self.done = False
         self.lock = Lock()
-        self.idCounter = 0;
+        self.idCounter = 0
+        self.connectedcollaborators = [""] #TODO remove if offline also
 
     def openfile(self, name):
         if os.path.isfile(name + "_content.txt"):
@@ -136,4 +137,4 @@ class TextFile(Thread):
         print self.carets[name]
 
     def getContent(self,name):
-        return self.content, self.carets[name]
+        return self.content, self.carets[name], ",".join(self.connectedcollaborators)

@@ -77,9 +77,9 @@ class Client():
         req = REQ_SYNCHRONIZE + MSG_FIELD_SEP
         data = self.send(req)
         content = deserialize(data[3:])
-        content,caret = content.split(":")
+        content,caret,online = content.split(":")
 
-        return content,int(caret)
+        return content,int(caret),online
 
     def addColaborator(self,name,password):
         self.server.file.addCollaborator(name,password)
