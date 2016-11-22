@@ -24,7 +24,7 @@ class ClientUI(Frame,Thread):
         self.content.destroy()
         self.client.close()
         if host:
-            self.client.server.close()
+            self.client.closeServer()
         #TODO client is not closed correctly
 
     def connectDialog(self):
@@ -292,6 +292,10 @@ class ClientUI(Frame,Thread):
         #sets caret pos to what it is in the server
         #updates self.caretpos to servers value - used with up and down arrow events
         content,caret, online = self.client._synchronise([])
+        if content == "CLOSE":
+            self.closeClient()
+            return
+
         if (self.textField != None) and self.sync != content:
             self.sync = content
             try:

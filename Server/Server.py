@@ -35,8 +35,6 @@ class Server(Thread):
 
     def close(self):
         self.running = False
-        self.file.end()
-        self.file.join()
 
     def loop(self):
         logging.info( 'Server loop started' )
@@ -55,16 +53,18 @@ class Server(Thread):
         except KeyboardInterrupt:
             logging.warn('Ctrl+C issued closing server ...')
         finally:
+            logging.info("Shutting down server...")
             if client_socket != None:
                 client_socket.close()
             self.socket.close()
-            map(lambda x: x.join(), handlers)
+            map(lambda x: x.disconnect(), handlers)
             self.file.end()
             self.file.join()
+        logging.info("Server loop ended")
 
 if __name__ == '__main__':
     logging.info( 'Application started' )
     server = Server()
-    server.listen(("0.0.0.0", DEFAULT_PORT))
-    server.loop()
+    server.start()
+    server.join()
     logging.info ( 'Terminating ...' )

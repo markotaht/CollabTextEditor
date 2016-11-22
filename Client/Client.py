@@ -77,7 +77,12 @@ class Client():
         req = REQ_SYNCHRONIZE + MSG_FIELD_SEP
         data = self.send(req)
         content = deserialize(data[3:])
-        content,caret,online = content.split(":")
+        try:
+            content,caret,online = content.split(":")
+        except:
+            self.socket.close()
+            self.socket = None
+            return "CLOSE","",""
 
         return content,int(caret),online
 
@@ -102,7 +107,9 @@ class Client():
         logging.info("Connected to server.")
         self.addCollaborator("test","1234")
 
-
+    def closeServer(self):
+        self.server.close()
+        self.connect(("127.0.0.1", 7777), "sulgeja", "DIE")
 
     def send(self,msg):
         m = msg + MSG_SEP

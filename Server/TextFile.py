@@ -21,7 +21,7 @@ class TextFile(Thread):
         self.collaborators = defaultdict(str)
         self.carets = defaultdict(int)
         self.queue = defaultdict(lambda:defaultdict(str))
-        self.done = False
+        self.running = True
         self.lock = Lock()
         self.idCounter = 0
         self.connectedcollaborators = [""] #TODO remove if offline also
@@ -80,14 +80,12 @@ class TextFile(Thread):
         self.addCollaborator(newname, password)
 
     def end(self):
-        self.done = True
+        self.running = False
 
     def run(self):
-        while 1:
+        while self.running:
             if not self.queue.keys():
                 continue
-            if self.done:
-                break
             self.checkEvents()
             self.savefile()
         self.savefile()

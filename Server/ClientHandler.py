@@ -1,4 +1,4 @@
-from socket import AF_INET, SOCK_STREAM, socket, SHUT_WR
+from socket import AF_INET, SOCK_STREAM, socket, SHUT_RDWR
 from socket import error as soc_err
 
 from Commons import *
@@ -105,6 +105,9 @@ class ClientHandler(Thread):
         blocks = package.split(MSG_FIELD_SEP)
         data = decodestring(blocks[1])
         return blocks[0],data
+
+    def disconnect(self):
+        self.client_socket.close()
 
     def send(self,response):
         m = response + MSG_SEP
