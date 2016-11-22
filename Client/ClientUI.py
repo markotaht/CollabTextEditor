@@ -1,7 +1,6 @@
 from Tkinter import *
 from threading import Thread, Lock
 from Commons import DEFAULT_PORT
-from Util import differenceBetween
 
 class ClientUI(Frame,Thread):
     def __init__(self, client):
