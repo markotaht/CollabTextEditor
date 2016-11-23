@@ -109,7 +109,6 @@ class Client():
         time.sleep(0.01)
         self.connect(("127.0.0.1", 7777),"me","admin")
         logging.info("Connected to server.")
-        self.addCollaborator("test","1234")
 
     def closeServer(self):
         self.server.close()

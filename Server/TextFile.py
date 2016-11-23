@@ -38,7 +38,7 @@ class TextFile(Thread):
                 self.collaborators[parts[0]] = parts[1]
             file.close()
         self.name = name
-        self.collaborators["me"] = "admin"
+        self.collaborators["admin"] = "admin"
 
     def removeOnline(self,name):
         self.connectedcollaborators.remove(name)

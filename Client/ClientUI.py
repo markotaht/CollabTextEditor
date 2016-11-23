@@ -66,8 +66,6 @@ class ClientUI(Frame,Thread):
 
         usernameEntry = Entry(top)
         usernameEntry.grid(row=0, column=1, padx=padx, pady=pady)
-        # TODO: Remove default placeholders later
-        usernameEntry.insert(0, 'me')
         usernameEntry.focus_set()
 
         passwordLabel = Label(top, text="Password:")
@@ -75,8 +73,6 @@ class ClientUI(Frame,Thread):
 
         passwordEntry = Entry(top, show="*")
         passwordEntry.grid(row=1, column=1, padx=padx, pady=pady)
-        # TODO: Remove default placeholders later
-        passwordEntry.insert(0, 'admin')
 
         ipLabel = Label(top, text="IP & Port:")
         ipLabel.grid(row=2, column=0, padx=padx, pady=pady)
