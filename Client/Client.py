@@ -31,18 +31,22 @@ class Client():
         try:
             self.socket.connect(srv_addr)
             logging.info('Connected to ConcurrentEditing server at %s:%d' % srv_addr)
-            if self.sendIntroduction(name,password) == RSP_INTRODUCTION_NOTOK:
+            content = self.sendIntroduction(name,password)
+            rsp, filename = content.split(":")
+            if rsp == RSP_INTRODUCTION_NOTOK:
                 self.socket.close()
                 return False
-            return True
+            return deserialize(filename)
         except soc_err as e:
             logging.error('Can not connect to the server at %s:%d' \
                           ' %s ' % (srv_addr + (str(e),)))
+        except ValueError as e:
+            logging.error("Need more than 1 value to unpack rsp, filename")
         return False
 
     def sendIntroduction(self,name,password):
         data = name + ":" + password
-        data =serialize(data)
+        data = serialize(data)
         req = INTRODUCTION+MSG_FIELD_SEP+data
         return self.send(req)
 
