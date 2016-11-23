@@ -99,7 +99,7 @@ class TextFile(Thread):
             if self.carets[i] <= 0:
                 self.carets[i] = 0
             if self.carets[i] > len(self.content):
-                self.carets[i] = len(self.content)
+                self.carets[i] = len(self.content)-1
 
     def applyEvent(self,id):
         if self.queue[id]["modification"] == "ADD_LETTER":
@@ -110,7 +110,7 @@ class TextFile(Thread):
         elif self.queue[id]["modification"] == "REMOVE_LETTER":
             carIndex =  self.carets[self.queue[id]["name"]]
             LOG.info("Removing a letter")
-            self.content = self.content[:carIndex]+ self.content[carIndex+1:]
+            self.content = self.content[:carIndex-1]+ self.content[carIndex:]
             self.move_caret(self.queue[id]["name"], carIndex, -1)
         return
 
