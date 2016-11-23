@@ -93,8 +93,12 @@ class ClientHandler(Thread):
         elif action == INTRODUCTION:
             name,password = data.split(":")
             if self.file.checkCollaborator(name,password):
-                self.clientname = name
-                self.file.connectedcollaborators.append(name)
+                #check if this name has not connected
+                if name in self.file.connectedcollaborators:
+                    return RSP_INTRODUCTION_NOTOK + ":" "none"
+                else:
+                    self.clientname = name
+                    self.file.connectedcollaborators.append(name)
                 return RSP_INTRODUCTION_OK + ":" + serialize(self.file.name)
             return RSP_INTRODUCTION_NOTOK + ":" "none"
         else:

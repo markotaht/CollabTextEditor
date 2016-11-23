@@ -170,7 +170,7 @@ class ClientUI(Frame,Thread):
                 if len(k) != 0:
                     self.collabbox.insert(END, str(k))
         except AttributeError:
-            pass#TODO here with remote text file
+            pass
 
     def manageCollaborators(self):
 
