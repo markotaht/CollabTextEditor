@@ -107,7 +107,7 @@ class Client():
         self.server = Server(filename)
         self.server.start()
         time.sleep(0.01)
-        self.connect(("127.0.0.1", 7777),"me","admin")
+        self.connect(("127.0.0.1", 7777),"admin","admin")
         logging.info("Connected to server.")
 
     def closeServer(self):
