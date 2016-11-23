@@ -141,7 +141,7 @@ class TextFile(Thread):
         print name
         print self.carets[name]
         with self.lock:
-            if self.carets[name] < len(self.content) and self.carets[name] >= 0:
+            if self.carets[name] <= len(self.content) and self.carets[name] >= 0:
                 self.carets[name] += movement
                 if self.carets[name] < 0:
                     self.carets[name] = 0
