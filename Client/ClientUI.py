@@ -30,9 +30,6 @@ class ClientUI(Frame,Thread):
         padx = 2
         pady = 2
 
-        top = Toplevel()
-        top.title("Connection Dialog")
-
         def callback(event):
             print usernameEntry.get()
             print passwordEntry.get()
@@ -51,10 +48,17 @@ class ClientUI(Frame,Thread):
                 ip,port = ipEntry.get().split(":")
             response = self.client.connect((ip, int(port)), usernameEntry.get(), passwordEntry.get())
             if response:
-                top.destroy()
                 self.remoteFile(response)
             else:
                 print "ERROR, "*100
+
+        top = self.content
+        for widget in top.winfo_children():
+            widget.destroy()
+        top.title("Connection Dialog")
+        top.bind("<Return>", callback)
+
+
 
         usernameLabel = Label(top, text="Username:")
         usernameLabel.grid(row=0, column=0, padx=padx, pady=pady)
@@ -65,7 +69,6 @@ class ClientUI(Frame,Thread):
         # TODO: Remove default placeholders later
         usernameEntry.insert(0, 'me')
         usernameEntry.focus_set()
-        usernameEntry.bind("<Return>", callback)
 
         passwordLabel = Label(top, text="Password:")
         passwordLabel.grid(row=1, column=0, padx=padx, pady=pady)
@@ -74,14 +77,12 @@ class ClientUI(Frame,Thread):
         passwordEntry.grid(row=1, column=1, padx=padx, pady=pady)
         # TODO: Remove default placeholders later
         passwordEntry.insert(0, 'admin')
-        passwordEntry.bind("<Return>", callback)
 
         ipLabel = Label(top, text="IP & Port:")
         ipLabel.grid(row=2, column=0, padx=padx, pady=pady)
 
         ipEntry = Entry(top)
         ipEntry.grid(row=2, column=1, padx=padx, pady=pady)
-        ipEntry.bind("<Return>", callback)
 
         connectButton = Button(top, text = "Connect", command=lambda: callback(None))
         connectButton.pack(side="bottom", padx=padx, pady=pady)
@@ -94,7 +95,6 @@ class ClientUI(Frame,Thread):
             print "added", un, pw
             self.client.addCollaborator(un, pw)
             self.updatemanagecollaborators()
-        #    self.updateOnlineCollaborators()
             window.destroy()
 
 
@@ -118,8 +118,13 @@ class ClientUI(Frame,Thread):
         padx = 2
         pady = 2
 
+        def callback(event):
+            if passwordEntry.get() != "" and usernameEntry.get() != "":
+                    self.updateCollaboratorsList(usernameEntry.get(), passwordEntry.get(), isAddingNew, top)
+
         top = Toplevel()
         top.title("Edit collaborators")
+        top.bind("<Return>", callback)
 
 
         usernameLabel = Label(top, text="Username:")
@@ -127,6 +132,7 @@ class ClientUI(Frame,Thread):
 
         usernameEntry = Entry(top)
         usernameEntry.grid(row=0, column=1, padx=padx, pady=pady)
+        usernameEntry.focus_set()
 
         passwordLabel = Label(top, text="Password:")
         passwordLabel.grid(row=1, column=0, padx=padx, pady=pady)
@@ -137,7 +143,7 @@ class ClientUI(Frame,Thread):
         cancelButton = Button(top, text="cancel", command = top.destroy)
         cancelButton.grid(row=2, column=0, padx=padx, pady=pady)
 
-        doneButton = Button(top, text="done", command = lambda: self.updateCollaboratorsList(usernameEntry.get(), passwordEntry.get(), isAddingNew, top))
+        doneButton = Button(top, text="done", command = lambda:callback(None))
         doneButton.grid(row=2, column=1, padx=padx, pady=pady)
 
 
@@ -260,7 +266,9 @@ class ClientUI(Frame,Thread):
         padx = 2
         pady = 2
 
-        top = Toplevel()
+        top = self.content
+        for widget in top.winfo_children():
+            widget.destroy()
         top.title(filename)
 
         buttons = LabelFrame(top)
@@ -282,7 +290,9 @@ class ClientUI(Frame,Thread):
         padx = 2
         pady = 2
 
-        top = Toplevel()
+        top = self.content
+        for widget in top.winfo_children():
+            widget.destroy()
         top.title("Remote file: " + filename)
 
         disconnectButton = Button(top, text="Disconnect", command=self.closeClient)
@@ -331,21 +341,24 @@ class ClientUI(Frame,Thread):
         padx = 2
         pady = 2
 
-        top = Toplevel()
-        top.title("Enter file name")
-
         def callback(event):
             filename = self.filenameentry.get()
             if filename != "":
-                top.destroy()
                 self.fileedit(filename)
+
+        top = self.content
+        for widget in top.winfo_children():
+            widget.destroy()
+        top.title("Enter file name")
+        top.bind("<Return>", callback)
+
 
         self.filenamelabel = Label(top, text="Enter file name (no extension):")
         self.filenamelabel.grid(row=0, column=0, padx=padx, pady=pady)
 
         self.filenameentry = Entry(top)
         self.filenameentry.grid(row=1, column=0, padx=padx, pady=pady)
-        self.filenameentry.bind("<Return>", callback)
+
 
         self.okbutton = Button(top, text = "Ok", command=lambda:callback(None))
         self.okbutton.grid(row=2, column=0, padx=padx, pady=pady)
@@ -358,21 +371,12 @@ class ClientUI(Frame,Thread):
         padx = 2
         pady = 2
 
-        def callback(id):
-            self.edityourfileButton.config(state="disabled")
-            self.editelsefileButton.config(state="disabled")
-
-            if id == 1:
-                self.filenamedialog()
-            else:
-                self.connectDialog()
-
         self.content.title("Googol Docs")
 
-        self.edityourfileButton = Button(text = "Local file", command = lambda: callback(1))
+        self.edityourfileButton = Button(text = "Local file", command = self.filenamedialog)
         self.edityourfileButton.grid(row = 0, column = 0, padx = padx, pady = pady)
 
-        self.editelsefileButton = Button(text = "Remote file", command = lambda: callback(2))
+        self.editelsefileButton = Button(text = "Remote file", command = self.connectDialog)
         self.editelsefileButton.grid(row = 0, column = 1, padx = padx, pady = pady)
 
         return True
