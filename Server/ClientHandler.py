@@ -95,8 +95,8 @@ class ClientHandler(Thread):
             if self.file.checkCollaborator(name,password):
                 self.clientname = name
                 self.file.connectedcollaborators.append(name)
-                return RSP_INTRODUCTION_OK
-            return RSP_INTRODUCTION_NOTOK
+                return RSP_INTRODUCTION_OK + ":" + serialize(self.file.name)
+            return RSP_INTRODUCTION_NOTOK + ":" "none"
         else:
             #An error occured
             return 0
