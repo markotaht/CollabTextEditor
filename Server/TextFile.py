@@ -96,6 +96,10 @@ class TextFile(Thread):
                 self.carets[i] += movement
             elif self.carets[i] >= index:
                 self.carets[i] += movement
+            if self.carets[i] <= 0:
+                self.carets[i] = 0
+            if self.carets[i] > len(self.content):
+                self.carets[i] = len(self.content)
 
     def applyEvent(self,id):
         if self.queue[id]["modification"] == "ADD_LETTER":
@@ -137,8 +141,12 @@ class TextFile(Thread):
         print name
         print self.carets[name]
         with self.lock:
-            if self.carets[name] <= len(self.content) and self.carets[name] >= 0:
+            if self.carets[name] < len(self.content) and self.carets[name] >= 0:
                 self.carets[name] += movement
+                if self.carets[name] < 0:
+                    self.carets[name] = 0
+                if self.carets[name] > len(self.content):
+                    self.carets[name] = len(self.content)
         print self.carets[name]
 
     def getContent(self,name):
